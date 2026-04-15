@@ -12,12 +12,12 @@ La autenticación es la columna vertebral del sistema. Cada acción en la plataf
 
 Un usuario puede tener múltiples roles simultáneamente:
 
-| Rol | Permisos principales |
-|---|---|
-| `student` | Comprar cursos, consumir contenido, ganar XP |
-| `producer` | Crear y vender productos, ver analytics |
-| `affiliate` | Promocionar productos con link de referido |
-| `admin` | Gestión total de la plataforma |
+| Rol         | Permisos principales                         |
+| ----------- | -------------------------------------------- |
+| `student`   | Comprar cursos, consumir contenido, ganar XP |
+| `producer`  | Crear y vender productos, ver analytics      |
+| `affiliate` | Promocionar productos con link de referido   |
+| `admin`     | Gestión total de la plataforma               |
 
 > Un mismo usuario puede ser `producer` + `affiliate` al mismo tiempo.
 
@@ -172,11 +172,11 @@ updated_at         TIMESTAMP
 
 ### 4.2 Estados del dinero
 
-| Estado | Descripción | Duración típica |
-|---|---|---|
-| `pending` | Recién ingresado. Sujeto a reembolso, fraude o contracargo | 14 días |
-| `available` | Libre para retirar | Indefinido hasta el retiro |
-| `paid` | Ya retirado por el usuario | Histórico |
+| Estado      | Descripción                                                | Duración típica            |
+| ----------- | ---------------------------------------------------------- | -------------------------- |
+| `pending`   | Recién ingresado. Sujeto a reembolso, fraude o contracargo | 14 días                    |
+| `available` | Libre para retirar                                         | Indefinido hasta el retiro |
+| `paid`      | Ya retirado por el usuario                                 | Histórico                  |
 
 ### 4.3 Tabla `transactions`
 
@@ -244,15 +244,15 @@ Este es el diferenciador clave frente a Hotmart. La plataforma incorpora mecáni
 
 Los usuarios acumulan XP al completar acciones:
 
-| Acción | XP ganado |
-|---|---|
-| Completar una lección | +10 XP |
-| Completar un módulo | +50 XP |
-| Completar un curso | +200 XP |
-| Primera venta (productor) | +500 XP |
-| Referir a un comprador (afiliado) | +100 XP |
-| Reseña verificada | +30 XP |
-| Racha de 7 días consecutivos | +150 XP |
+| Acción                            | XP ganado |
+| --------------------------------- | --------- |
+| Completar una lección             | +10 XP    |
+| Completar un módulo               | +50 XP    |
+| Completar un curso                | +200 XP   |
+| Primera venta (productor)         | +500 XP   |
+| Referir a un comprador (afiliado) | +100 XP   |
+| Reseña verificada                 | +30 XP    |
+| Racha de 7 días consecutivos      | +150 XP   |
 
 ### 6.2 Tabla `xp_events`
 
@@ -283,6 +283,7 @@ earned_at    TIMESTAMP
 ```
 
 Ejemplos de badges:
+
 - 🔥 **Racha de 30 días** — acceso diario por 30 días
 - 💰 **Primera venta** — primer producto vendido
 - 🌟 **Top Afiliado** — top 10 del mes en comisiones
@@ -301,6 +302,7 @@ updated_at   TIMESTAMP
 ```
 
 Rankings sugeridos:
+
 - **Top Productores** del mes (por ventas)
 - **Top Afiliados** del mes (por comisiones)
 - **Top Estudiantes** (por XP)
@@ -336,15 +338,15 @@ users
 
 ## 8. División de Responsabilidades
 
-| Lemon Squeezy | EduMarket Backend |
-|---|---|
-| Checkout y pagos con tarjeta | Registro de ventas |
-| Facturación automática | Cálculo y distribución de comisiones |
-| Impuestos internacionales | Wallets internas |
-| Detección de fraude | Sistema de afiliados |
-| Reembolsos (flujo externo) | Procesamiento de retiros (payouts) |
-| — | Gamificación (XP, badges, rankings) |
-| — | Analytics de productores |
+| Lemon Squeezy                | EduMarket Backend                    |
+| ---------------------------- | ------------------------------------ |
+| Checkout y pagos con tarjeta | Registro de ventas                   |
+| Facturación automática       | Cálculo y distribución de comisiones |
+| Impuestos internacionales    | Wallets internas                     |
+| Detección de fraude          | Sistema de afiliados                 |
+| Reembolsos (flujo externo)   | Procesamiento de retiros (payouts)   |
+| —                            | Gamificación (XP, badges, rankings)  |
+| —                            | Analytics de productores             |
 
 ---
 
