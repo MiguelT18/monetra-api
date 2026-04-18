@@ -1,4 +1,4 @@
-# EduMarket — Notas de Backend
+# Monetra — Notas de Backend
 
 > **Visión del producto:** Alternativa gamificada a Hotmart. Una plataforma donde productores, afiliados y estudiantes interactúan en un ecosistema de cursos digitales con mecánicas de juego (XP, niveles, logros, rankings) que impulsan la participación y las ventas.
 
@@ -96,14 +96,14 @@ created_at          TIMESTAMP
 
 ## 3. Sistema de Pagos y Cobros (Lemon Squeezy como MoR)
 
-EduMarket **no procesa pagos directamente**. Usa **Lemon Squeezy** como Merchant of Record (MoR), lo que delega:
+Monetra **no procesa pagos directamente**. Usa **Lemon Squeezy** como Merchant of Record (MoR), lo que delega:
 
 - Procesamiento de tarjetas
 - Gestión de impuestos internacionales
 - Detección de fraude y compliance
 - Emisión de facturas
 
-EduMarket solo gestiona lo que ocurre **después** del pago: comisiones, wallets y retiros.
+Monetra solo gestiona lo que ocurre **después** del pago: comisiones, wallets y retiros.
 
 ### 3.1 Flujo completo de una venta
 
@@ -338,7 +338,7 @@ users
 
 ## 8. División de Responsabilidades
 
-| Lemon Squeezy                | EduMarket Backend                    |
+| Lemon Squeezy                | Monetra Backend                      |
 | ---------------------------- | ------------------------------------ |
 | Checkout y pagos con tarjeta | Registro de ventas                   |
 | Facturación automática       | Cálculo y distribución de comisiones |

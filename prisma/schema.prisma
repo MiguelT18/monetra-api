@@ -1,0 +1,244 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  PRODUCER
+  AFFILIATE
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CommissionStatus {
+  PENDING
+  PAID
+  REJECTED
+  CANCELED
+}
+
+// auth.user → Profile
+model Profile {
+  id        String   @id
+  username  String?  @unique
+  role      Role
+  createdAt DateTime @default(now())
+
+  gamifications Gamification[]
+  enrollments   Enrollment[]
+  commissions   Commission[]
+  orders        Order[]
+  affiliations  Affiliation[]
+  products      Product[]
+}
+
+// Representa cursos o productos digitales.
+model Product {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  price       Float
+  producerId  String
+  status      ProductStatus
+  createdAt   DateTime      @default(now())
+
+  producer Profile @relation(fields: [producerId], references: [id])
+
+  affiliations Affiliation[]
+  orders       Order[]
+  enrollments  Enrollment[]
+}
+
+// Relación afiliado ↔ producto.
+model Affiliation {
+  id           String @id @default(uuid())
+  productId    String
+  affiliateId  String
+  commissionId String
+  code         String @unique
+
+  affiliate Profile @relation(fields: [affiliateId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  commissions Commission[]
+}
+
+// Registro de compras
+model Order {
+  id        String   @id @default(uuid())
+  productId String
+  buyerId   String
+  total     Float
+  createdAt DateTime @default(now())
+
+  buyer       Profile      @relation(fields: [buyerId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
+  commissions Commission[]
+}
+
+// Para calcular ingresos de los afiliados
+model Commission {
+  id            String           @id @default(uuid())
+  profileId     String?
+  orderId       String
+  affiliationId String
+  amount        Float
+  status        CommissionStatus
+
+  order       Order       @relation(fields: [orderId], references: [id])
+  affiliation Affiliation @relation(fields: [affiliationId], references: [id])
+  profile     Profile?    @relation(fields: [profileId], references: [id])
+}
+
+// Tabla simple de progreso
+model Gamification {
+  userId    String   @id
+  xp        Int
+  level     Int
+  createdAt DateTime @default(now())
+
+  user Profile @relation(fields: [userId], references: [id])
+}
+
+// Progreso del curso (solo si hay contenido)
+model Enrollment {
+  id        String @id @default(uuid())
+  productId String
+  userId    String
+  progress  Int
+
+  user    Profile @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+// model User {
+//   id       Int     @id @default(autoincrement())
+//   email    String  @unique
+//   password String
+//   name     String
+//   role     Role    @default(STUDENT) // STUDENT | TEACHER
+//   avatar   String?
+//   bio      String?
+
+//   // Relaciones
+//   createdCourses  Course[]     @relation("TeacherCourses")
+//   enrolledCourses Enrollment[]
+//   reviews         Review[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// enum Role {
+//   STUDENT
+//   TEACHER
+// }
+
+// // Curso
+// model Course {
+//   id          Int     @id @default(autoincrement())
+//   title       String
+//   description String
+//   price       Float
+//   category    String
+//   image       String?
+//   rating      Float   @default(0)
+
+//   // Relación con profesor
+//   teacherId Int
+//   teacher   User @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Cascade)
+
+//   // Relaciones
+//   sections    Section[]
+//   enrollments Enrollment[]
+//   reviews     Review[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // Sección del curso
+// model Section {
+//   id    Int    @id @default(autoincrement())
+//   title String
+//   order Int
+
+//   // Relación con curso
+//   courseId Int
+//   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+//   // Lecciones
+//   lessons Lesson[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // Lección
+// model Lesson {
+//   id          Int     @id @default(autoincrement())
+//   title       String
+//   description String?
+//   videoUrl    String?
+//   order       Int
+//   duration    Int? // en minutos
+
+//   // Relación con sección
+//   sectionId Int
+//   section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // Inscripción a curso
+// model Enrollment {
+//   id       Int @id @default(autoincrement())
+//   userId   Int
+//   courseId Int
+
+//   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+//   progress  Float   @default(0) // 0-100
+//   completed Boolean @default(false)
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@unique([userId, courseId]) // Un usuario no puede inscribirse 2 veces
+// }
+
+// // Reseña de curso
+// model Review {
+//   id      Int     @id @default(autoincrement())
+//   rating  Int // 1-5
+//   comment String?
+
+//   userId   Int
+//   courseId Int
+
+//   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@unique([userId, courseId]) // Una reseña por usuario/curso
+// }

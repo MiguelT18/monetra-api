@@ -1,16 +1,14 @@
-import express from "express"
+import AuthRoutes from "../src/routes/auth.routes.js";
+import express from "express";
 
-const app = express()
+const app = express();
 
-app.use(express.json()) // middleware que transforma req.body en JSON
+app.use(express.json()); // middleware que transforma req.body en JSON
 
-const PORT = 3000
+const port = process.env.PORT;
 
-app.get("/ping", (_, res) => {
-	console.log(`ping received: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`)
-	res.send("pong")
-})
+app.use("/api", AuthRoutes);
 
-app.listen(PORT, () => {
-	console.log(`Server is running on port http://localhost:${PORT}`)
-})
+app.listen(port, () => {
+  console.log(`Server is running on port http://localhost:${port}`);
+});
