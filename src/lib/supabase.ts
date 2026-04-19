@@ -1,9 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
+import { env } from "../config/env.ts";
 
-const supabaseUrl = process.env.SUPABASE_URL as string;
-const supabaseKey = process.env.SUPABASE_KEY as string;
+const supabaseUrl = env.SUPABASE_URL;
+const supabaseKey = env.SUPABASE_KEY;
 
-export const supabase = createClient(supabaseKey, supabaseUrl, {
+export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,

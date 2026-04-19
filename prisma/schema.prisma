@@ -4,8 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -32,22 +31,24 @@ enum CommissionStatus {
 }
 
 // auth.user → Profile
-model Profile {
+model Profiles {
   id        String   @id
   username  String?  @unique
-  role      Role
+  role      Role     @default(STUDENT)
   createdAt DateTime @default(now())
 
-  gamifications Gamification[]
-  enrollments   Enrollment[]
-  commissions   Commission[]
-  orders        Order[]
-  affiliations  Affiliation[]
-  products      Product[]
+  gamifications Gamifications[]
+  enrollments   Enrollments[]
+  commissions   Commissions[]
+  orders        Orders[]
+  affiliations  Affiliations[]
+  products      Products[]
+
+  @@map("Profiles")
 }
 
 // Representa cursos o productos digitales.
-model Product {
+model Products {
   id          String        @id @default(uuid())
   title       String
   description String
@@ -56,42 +57,42 @@ model Product {
   status      ProductStatus
   createdAt   DateTime      @default(now())
 
-  producer Profile @relation(fields: [producerId], references: [id])
+  producer Profiles @relation(fields: [producerId], references: [id])
 
-  affiliations Affiliation[]
-  orders       Order[]
-  enrollments  Enrollment[]
+  affiliations Affiliations[]
+  orders       Orders[]
+  enrollments  Enrollments[]
 }
 
 // Relación afiliado ↔ producto.
-model Affiliation {
+model Affiliations {
   id           String @id @default(uuid())
   productId    String
   affiliateId  String
   commissionId String
   code         String @unique
 
-  affiliate Profile @relation(fields: [affiliateId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  product   Products @relation(fields: [productId], references: [id])
+  affiliate Profiles @relation(fields: [affiliateId], references: [id])
 
-  commissions Commission[]
+  commissions Commissions[]
 }
 
 // Registro de compras
-model Order {
+model Orders {
   id        String   @id @default(uuid())
   productId String
   buyerId   String
   total     Float
   createdAt DateTime @default(now())
 
-  buyer       Profile      @relation(fields: [buyerId], references: [id])
-  product     Product      @relation(fields: [productId], references: [id])
-  commissions Commission[]
+  buyer       Profiles      @relation(fields: [buyerId], references: [id])
+  product     Products      @relation(fields: [productId], references: [id])
+  commissions Commissions[]
 }
 
 // Para calcular ingresos de los afiliados
-model Commission {
+model Commissions {
   id            String           @id @default(uuid())
   profileId     String?
   orderId       String
@@ -99,30 +100,30 @@ model Commission {
   amount        Float
   status        CommissionStatus
 
-  order       Order       @relation(fields: [orderId], references: [id])
-  affiliation Affiliation @relation(fields: [affiliationId], references: [id])
-  profile     Profile?    @relation(fields: [profileId], references: [id])
+  order       Orders       @relation(fields: [orderId], references: [id])
+  affiliation Affiliations @relation(fields: [affiliationId], references: [id])
+  profile     Profiles?    @relation(fields: [profileId], references: [id])
 }
 
 // Tabla simple de progreso
-model Gamification {
+model Gamifications {
   userId    String   @id
   xp        Int
   level     Int
   createdAt DateTime @default(now())
 
-  user Profile @relation(fields: [userId], references: [id])
+  user Profiles @relation(fields: [userId], references: [id])
 }
 
 // Progreso del curso (solo si hay contenido)
-model Enrollment {
+model Enrollments {
   id        String @id @default(uuid())
   productId String
   userId    String
   progress  Int
 
-  user    Profile @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  user    Profiles @relation(fields: [userId], references: [id])
+  product Products @relation(fields: [productId], references: [id])
 
   @@unique([userId, productId])
 }
