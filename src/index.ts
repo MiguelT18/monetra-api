@@ -5,12 +5,14 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
-app.use(express.json()); // middleware que transforma req.body en JSON
+app.use(express.json());
 app.use(cookieParser());
 
 const port = env.PORT;
 
 app.use("/api/auth", UserRoutes);
+// TODO: Create products endpoint `/api/products`
+// TODO: Create affiliates endpoint `/api/affiliates`
 
 app.listen(port, () => {
   console.log(`Server is running on port http://localhost:${port}`);

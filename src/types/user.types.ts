@@ -1,18 +1,37 @@
-import type { Prisma } from "../generated/prisma/browser.ts";
+import type { Prisma } from "@prisma/client";
 
-// Data Transfer Object for creating a new user
+// User DTO
+
 export interface UserDTO {
   username: string;
-  password: string;
   role: UserRole;
 }
 
-// SafeUser type that excludes sensitive fields like password
-export type SafeUser = Prisma.ProfileGetPayload<{
-  select: {
-    id: true;
-    username: true;
-    role: true;
-    createdAt: true;
-  };
+export const SAFE_USER_SELECT = {
+  id: true,
+  username: true,
+  role: true,
+  createdAt: true,
+} as const;
+
+export type SafeUser = Prisma.ProfilesGetPayload<{
+  select: typeof SAFE_USER_SELECT;
+}>;
+
+// Update Profile DTO
+
+export type UpdateProfileDTO = Prisma.ProfilesUpdateInput;
+
+export const PROFILE_SELECT = {
+  id: true,
+  username: true,
+  fullname: true,
+  bio: true,
+  avatar: true,
+  role: true,
+  phone: true,
+} as const;
+
+export type ProfileResponse = Prisma.ProfilesGetPayload<{
+  select: typeof PROFILE_SELECT;
 }>;

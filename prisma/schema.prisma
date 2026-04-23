@@ -33,8 +33,12 @@ enum CommissionStatus {
 // auth.user → Profile
 model Profiles {
   id        String   @id
-  username  String?  @unique
   role      Role     @default(STUDENT)
+  username  String?  @unique
+  fullname  String?
+  bio       String?
+  avatar    String?
+  phone     String?
   createdAt DateTime @default(now())
 
   gamifications Gamifications[]
