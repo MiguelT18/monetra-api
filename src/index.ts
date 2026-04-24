@@ -1,4 +1,5 @@
 import UserRoutes from "./routes/user.routes.ts";
+import ProductRoutes from "./routes/product.routes.ts";
 import express from "express";
 import { env } from "./config/env.ts";
 import cookieParser from "cookie-parser";
@@ -8,13 +9,13 @@ const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(errorMiddleware);
 
 const port = env.PORT;
 
 app.use("/api/auth", UserRoutes);
-// TODO: Create products endpoint `/api/products`
-// TODO: Create affiliates endpoint `/api/affiliates`
+app.use("/api/products", ProductRoutes);
+
+app.use(errorMiddleware);
 
 app.listen(port, () => {
   console.log(`Server is running on port http://localhost:${port}`);

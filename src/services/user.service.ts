@@ -1,5 +1,5 @@
 import { prisma as PrismaInstance } from "../lib/prisma.ts";
-import { SAFE_USER_SELECT, PROFILE_SELECT } from "../types/user.types.ts";
+import { PROFILE_SELECT } from "../types/user.types.ts";
 import type { PrismaClient } from "@prisma/client";
 import type {
   UserDTO,
@@ -12,14 +12,22 @@ class UserService {
   constructor(private prisma: PrismaClient = PrismaInstance) {}
 
   async createUser(id: string, data: UserDTO): Promise<SafeUser> {
-    return this.prisma.profiles.create({
+    const user = await this.prisma.profiles.create({
       data: {
         id,
-        username: data.username,
-        role: data.role,
+        ...data,
       },
-      select: SAFE_USER_SELECT,
     });
+
+    await this.prisma.gamifications.create({
+      data: {
+        userId: user.id,
+        xp: 0,
+        level: 1,
+      },
+    });
+
+    return user;
   }
 
   async updateProfile(

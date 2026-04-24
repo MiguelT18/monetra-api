@@ -58,7 +58,7 @@ model Products {
   description String
   price       Float
   producerId  String
-  status      ProductStatus
+  status      ProductStatus @default(DRAFT)
   createdAt   DateTime      @default(now())
 
   producer Profiles @relation(fields: [producerId], references: [id])
