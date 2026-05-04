@@ -35,3 +35,23 @@ export const PROFILE_SELECT = {
 export type ProfileResponse = Prisma.ProfilesGetPayload<{
   select: typeof PROFILE_SELECT;
 }>;
+
+export const FULL_PROFILE_SELECT = {
+  id: true,
+  username: true,
+  email: true,
+  fullname: true,
+  bio: true,
+  avatar: true,
+
+  gamifications: {
+    select: {
+      xp: true,
+      level: true,
+    },
+  },
+} as const;
+
+export type FullProfileResponse = Prisma.ProfilesGetPayload<{
+  select: typeof FULL_PROFILE_SELECT;
+}>;

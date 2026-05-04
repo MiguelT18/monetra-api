@@ -1,5 +1,5 @@
-import userService from "../services/user.service.ts";
-import { ok } from "../utils/helpers.ts";
+import UserService from "../services/user.service.ts";
+import { fail, ok } from "../utils/helpers.ts";
 import type { Request, Response, RequestHandler } from "express";
 import { supabase } from "../lib/supabase.ts";
 import { env } from "../config/env.ts";
@@ -22,12 +22,16 @@ export const register: RequestHandler = asyncHandler(
       throw new HttpError(400, error?.message || "Failed to create user");
     }
 
-    const user = await userService.createUser(data.user.id, {
-      username,
-      role,
-    });
+    const user = await UserService.createUser(
+      data.user.id,
+      {
+        username,
+        role,
+      },
+      email,
+    );
 
-    res.status(201).json(ok("User registered successfully", { user }));
+    res.status(201).json(ok("Usuario registrado correctamente", { user }));
   },
 );
 
@@ -48,7 +52,7 @@ export const login: RequestHandler = asyncHandler(
       throw new HttpError(400, "Invalid email or password");
     }
 
-    const user = await userService.getUserById(data.user.id);
+    const user = await UserService.getFullUser(data.user.id);
 
     if (!user) {
       throw new HttpError(400, "User not found");
@@ -59,18 +63,18 @@ export const login: RequestHandler = asyncHandler(
     res.cookie("access_token", access_token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 60 * 60 * 1000,
     });
 
     res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    res.json(ok("Login successful", { user }));
+    res.json(ok("Iniciaste sesión!", { user }));
   },
 );
 
@@ -79,9 +83,27 @@ export const updateProfile: RequestHandler = asyncHandler(
     const parsed = updateProfileSchema.parse(req.body);
     const data = removeUndefined(parsed);
 
-    const user = await userService.updateProfile(req.user!.id, data);
+    const user = await UserService.updateProfile(req.user!.id, data);
 
-    res.json(ok("User updated successfully", { user }));
+    res.json(ok("Actualizaste tu perfil correctamente!", { user }));
+  },
+);
+
+export const getUserProfile: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json(fail("Sin autorización"));
+    }
+
+    const user = await UserService.getFullUser(userId);
+
+    if (!user) {
+      return res.status(404).json(fail("Usuario no encontrado"));
+    }
+
+    return res.json(ok("Perfil del usuario obtenido", user));
   },
 );
 
@@ -106,18 +128,18 @@ export const refreshSession: RequestHandler = asyncHandler(
     res.cookie("access_token", access_token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 60 * 60 * 1000,
     });
 
     res.cookie("refresh_token", refresh_token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({ message: "Session refreshed" });
+    res.json({ message: "Sesión refrescada" });
   },
 );
 
@@ -132,6 +154,6 @@ export const logout: RequestHandler = asyncHandler(
     res.clearCookie("access_token");
     res.clearCookie("refresh_token");
 
-    res.json(ok("Logged out"));
+    res.json(ok("Cerraste sesión"));
   },
 );

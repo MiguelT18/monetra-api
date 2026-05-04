@@ -5,9 +5,10 @@ import { authMiddleware } from "../middleware/auth.middleware.ts";
 
 const router: IRouter = Router();
 
+router.post("/refresh-session", UserController.refreshSession);
+router.get("/get-profile", authMiddleware, UserController.getUserProfile);
 router.post("/register", UserController.register);
 router.post("/login", UserController.login);
-router.post("/refresh-session", UserController.refreshSession);
 router.post("/logout", UserController.logout);
 router.put("/profile", authMiddleware, UserController.updateProfile);
 
