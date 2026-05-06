@@ -8,6 +8,7 @@ import type {
   UpdateProfileDTO,
   FullProfileResponse,
 } from "../types/user.types.ts";
+import type { Role } from "../generated/prisma/enums.ts";
 
 class UserService {
   constructor(private prisma: PrismaClient = PrismaInstance) {}
@@ -49,6 +50,14 @@ class UserService {
     return this.prisma.profiles.findUnique({
       where: { id },
       select: FULL_PROFILE_SELECT,
+    });
+  }
+
+  async updateRole(id: string, role: Role): Promise<ProfileResponse> {
+    return this.prisma.profiles.update({
+      where: { id },
+      data: { role },
+      select: PROFILE_SELECT,
     });
   }
 }

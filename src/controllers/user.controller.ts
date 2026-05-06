@@ -10,21 +10,22 @@ import { HttpError } from "../errors/http-error.ts";
 
 export const register: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const { email, username, password, role = "STUDENT" } = req.body;
+    const { fullname, email, username, password, role = "STUDENT" } = req.body;
 
-    if (!email || !password || !username) {
-      throw new HttpError(400, "Missing required fields");
+    if (!email || !password || !username || !fullname) {
+      throw new HttpError(400, "Faltan campos requeridos");
     }
 
     const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error || !data?.user) {
-      throw new HttpError(400, error?.message || "Failed to create user");
+      throw new HttpError(400, error?.message || "Error al registrar usuario");
     }
 
     const user = await UserService.createUser(
       data.user.id,
       {
+        fullname,
         username,
         role,
       },
@@ -40,7 +41,7 @@ export const login: RequestHandler = asyncHandler(
     const { email, password } = req.body;
 
     if (!email || !password) {
-      throw new HttpError(400, "Missing required fields");
+      throw new HttpError(400, "Faltan campos requeridos");
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -49,13 +50,13 @@ export const login: RequestHandler = asyncHandler(
     });
 
     if (error || !data?.user || !data.session) {
-      throw new HttpError(400, "Invalid email or password");
+      throw new HttpError(400, "Correo o contraseña incorrectos");
     }
 
     const user = await UserService.getFullUser(data.user.id);
 
     if (!user) {
-      throw new HttpError(400, "User not found");
+      throw new HttpError(400, "Usuario no encontrado");
     }
 
     const { access_token, refresh_token } = data.session;
@@ -89,6 +90,28 @@ export const updateProfile: RequestHandler = asyncHandler(
   },
 );
 
+export const updateRole: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new HttpError(401, "Sin autorización");
+    }
+
+    const { role } = req.body;
+
+    const VALID_ROLES = ["STUDENT", "PRODUCER", "AFFILIATE"];
+
+    if (!role || !VALID_ROLES.includes(role)) {
+      throw new HttpError(400, "Rol inválido");
+    }
+
+    const user = await UserService.updateRole(userId, role);
+
+    res.json(ok("Rol actualizado correctamente", { user }));
+  },
+);
+
 export const getUserProfile: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?.id;
@@ -112,7 +135,7 @@ export const refreshSession: RequestHandler = asyncHandler(
     const refreshToken = req.cookies?.refresh_token;
 
     if (!refreshToken) {
-      throw new HttpError(400, "Missing refresh token");
+      throw new HttpError(400, "Falta el token de refresco");
     }
 
     const { data, error } = await supabase.auth.refreshSession({
@@ -120,7 +143,7 @@ export const refreshSession: RequestHandler = asyncHandler(
     });
 
     if (error || !data.session) {
-      throw new HttpError(400, "Invalid refresh token");
+      throw new HttpError(400, "Token de refresco inválido");
     }
 
     const { access_token, refresh_token } = data.session;

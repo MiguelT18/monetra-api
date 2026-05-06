@@ -11,5 +11,6 @@ router.post("/register", UserController.register);
 router.post("/login", UserController.login);
 router.post("/logout", UserController.logout);
 router.put("/profile", authMiddleware, UserController.updateProfile);
+router.patch("/role", authMiddleware, UserController.updateRole);
 
 export default router;

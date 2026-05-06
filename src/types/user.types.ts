@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 // User DTO
 
 export interface UserDTO {
+  fullname: string;
   username: string;
   role: UserRole;
 }
@@ -43,6 +44,7 @@ export const FULL_PROFILE_SELECT = {
   fullname: true,
   bio: true,
   avatar: true,
+  role: true,
 
   gamifications: {
     select: {
