@@ -10,6 +10,11 @@ router.get("/get-profile", authMiddleware, UserController.getUserProfile);
 router.post("/register", UserController.register);
 router.post("/login", UserController.login);
 router.post("/logout", UserController.logout);
+router.post("/forgot-password", UserController.forgotPassword);
+router.post("/recovery-session", UserController.recoverySession);
+router.post("/update-password", UserController.updatePassword);
+router.get("/oauth/:provider", UserController.oauthUrl);
+router.post("/oauth/callback", UserController.oauthCallback);
 router.put("/profile", authMiddleware, UserController.updateProfile);
 router.patch("/role", authMiddleware, UserController.updateRole);
 
