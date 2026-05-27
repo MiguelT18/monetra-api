@@ -10,17 +10,13 @@ const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
-// app.use({
-//   cors({
-//     origin: "http://localhost:3000",
-//     credentials: true,  })
-// })
 app.use(cors());
 
 const port = env.PORT;
 
 app.use("/api/auth", UserRoutes);
 app.use("/api/products", ProductRoutes);
+// Afiliaciones globales del usuario (fase 2): app.use("/api/affiliations", AffiliationRoutes);
 
 app.use(errorMiddleware);
 

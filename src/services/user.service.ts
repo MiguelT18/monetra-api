@@ -8,7 +8,7 @@ import type {
   UpdateProfileDTO,
   FullProfileResponse,
 } from "../types/user.types.ts";
-import type { Role } from "../generated/prisma/enums.ts";
+import type { Role } from "@prisma/client";
 
 class UserService {
   constructor(private prisma: PrismaClient = PrismaInstance) {}

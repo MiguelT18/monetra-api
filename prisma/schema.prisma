@@ -27,17 +27,24 @@ model Profiles {
 }
 
 model Products {
-  id           String         @id @default(uuid())
-  title        String
-  description  String
-  price        Float
-  producerId   String
-  status       ProductStatus  @default(DRAFT)
-  createdAt    DateTime       @default(now())
-  affiliations Affiliations[]
-  enrollments  Enrollments[]
-  orders       Orders[]
-  producer     Profiles       @relation(fields: [producerId], references: [id])
+  id                  String         @id @default(uuid())
+  title               String
+  description         String
+  price               Float
+  producerId          String
+  status              ProductStatus  @default(DRAFT)
+  affiliateEnabled    Boolean        @default(false)
+  commissionRate      Float?
+  affiliateCookieDays Int            @default(30)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  affiliations        Affiliations[]
+  enrollments         Enrollments[]
+  orders              Orders[]
+  producer            Profiles       @relation(fields: [producerId], references: [id])
+
+  @@index([producerId])
+  @@index([status])
 }
 
 model Affiliations {
