@@ -27,10 +27,13 @@ export const listMyProducts: RequestHandler = asyncHandler(
 );
 
 export const listCatalog: RequestHandler = asyncHandler(
-  async (_req: Request, res: Response) => {
-    const products = await ProductService.listPublishedCatalog();
+  async (req: Request, res: Response) => {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 12));
 
-    res.json(ok("Catálogo de productos publicados", { products }));
+    const result = await ProductService.listPublishedCatalog(page, limit);
+
+    res.json(ok("Catálogo de productos publicados", result));
   },
 );
 
