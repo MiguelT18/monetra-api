@@ -21,23 +21,25 @@ class GamificationService {
   }
 
   async addXP(userId: string, xpToAdd: number) {
-    const current = await this.prisma.gamifications.findUnique({
-      where: { userId },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.gamifications.findUnique({
+        where: { userId },
+      });
 
-    if (!current) {
-      throw new Error("Gamification profile not found");
-    }
+      if (!current) {
+        throw new Error("Gamification profile not found");
+      }
 
-    const newXP = current.xp + xpToAdd;
-    const newLevel = this.calculateLevel(newXP);
+      const newXP = current.xp + xpToAdd;
+      const newLevel = this.calculateLevel(newXP);
 
-    return this.prisma.gamifications.update({
-      where: { userId },
-      data: {
-        xp: newXP,
-        level: newLevel,
-      },
+      return tx.gamifications.update({
+        where: { userId },
+        data: {
+          xp: newXP,
+          level: newLevel,
+        },
+      });
     });
   }
 

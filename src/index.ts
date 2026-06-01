@@ -5,18 +5,19 @@ import express from "express";
 import { env } from "./config/env.ts";
 import cookieParser from "cookie-parser";
 import { errorMiddleware } from "./middleware/error.middleware.ts";
+import { generalLimiter } from "./middleware/rate-limit.middleware.ts";
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
+app.use(generalLimiter);
 
 const port = env.PORT;
 
 app.use("/api/auth", UserRoutes);
 app.use("/api/products", ProductRoutes);
-// Afiliaciones globales del usuario (fase 2): app.use("/api/affiliations", AffiliationRoutes);
 
 app.use(errorMiddleware);
 

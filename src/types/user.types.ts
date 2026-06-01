@@ -1,11 +1,11 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, Role } from "@prisma/client";
 
 // User DTO
 
 export interface UserDTO {
   fullname: string;
   username: string;
-  role: UserRole;
+  role: Role;
 }
 
 export const SAFE_USER_SELECT = {

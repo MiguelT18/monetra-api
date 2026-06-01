@@ -48,6 +48,13 @@ export const productWithProducerArgs =
           avatar: true,
         },
       },
+    },
+  });
+
+export const productWithProducerAndCountArgs =
+  Prisma.validator<Prisma.ProductsDefaultArgs>()({
+    select: {
+      ...productWithProducerArgs.select,
       _count: {
         select: {
           affiliations: true,
@@ -60,6 +67,8 @@ export const productWithProducerArgs =
 
 export const PRODUCT_SELECT = productSelectArgs.select;
 export const PRODUCT_WITH_PRODUCER_SELECT = productWithProducerArgs.select;
+export const PRODUCT_WITH_PRODUCER_AND_COUNT =
+  productWithProducerAndCountArgs.select;
 
 export type ProductResponse = Prisma.ProductsGetPayload<typeof productSelectArgs>;
 export type ProductWithRelations =

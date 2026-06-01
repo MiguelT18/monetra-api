@@ -4,6 +4,7 @@ import { HttpError } from "../errors/http-error.ts";
 import {
   PRODUCT_SELECT,
   PRODUCT_WITH_PRODUCER_SELECT,
+  PRODUCT_WITH_PRODUCER_AND_COUNT,
   type CreateProductInput,
   type UpdateProductInput,
 } from "../types/product.types.ts";
@@ -67,7 +68,7 @@ class ProductService {
   async getById(productId: string) {
     return this.prisma.products.findUnique({
       where: { id: productId },
-      select: PRODUCT_WITH_PRODUCER_SELECT,
+      select: PRODUCT_WITH_PRODUCER_AND_COUNT,
     });
   }
 

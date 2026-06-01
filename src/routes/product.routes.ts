@@ -4,6 +4,7 @@ import * as EnrollmentController from "../controllers/enrollment.controller.ts";
 import { Router, type IRouter } from "express";
 import { authMiddleware } from "../middleware/auth.middleware.ts";
 import { loadProfile, requireRole } from "../middleware/profile.middleware.ts";
+import { productWriteLimiter } from "../middleware/rate-limit.middleware.ts";
 
 const router: IRouter = Router();
 
@@ -14,7 +15,7 @@ router.get("/catalog", ProductController.listCatalog);
 
 // Productor: CRUD de sus productos
 router.get("/mine", requireRole("PRODUCER"), ProductController.listMyProducts);
-router.post("/", requireRole("PRODUCER"), ProductController.createProduct);
+router.post("/", requireRole("PRODUCER"), productWriteLimiter, ProductController.createProduct);
 
 // Afiliado: elegibilidad y alta (alta = fase 2)
 router.get(
@@ -42,7 +43,7 @@ router.post(
 
 // Detalle, actualización y borrado por id (rutas con :id al final)
 router.get("/:id", ProductController.getProduct);
-router.put("/:id", requireRole("PRODUCER"), ProductController.updateProduct);
+router.put("/:id", requireRole("PRODUCER"), productWriteLimiter, ProductController.updateProduct);
 router.delete("/:id", requireRole("PRODUCER"), ProductController.deleteProduct);
 
 export default router;
