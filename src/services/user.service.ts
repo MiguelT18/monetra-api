@@ -61,13 +61,14 @@ class UserService {
     });
   }
 
-  async searchUsers(query: string, limit = 10) {
+  async searchUsers(query: string, limit = 10, excludeId?: string) {
     return this.prisma.profiles.findMany({
       where: {
         OR: [
           { username: { contains: query, mode: "insensitive" } },
           { fullname: { contains: query, mode: "insensitive" } },
         ],
+        ...(excludeId ? { id: { not: excludeId } } : {}),
       },
       select: USER_SEARCH_SELECT,
       take: limit,

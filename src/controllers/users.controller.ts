@@ -7,12 +7,12 @@ export const searchUsers: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const query = (req.query.q as string)?.trim();
 
-    if (!query || query.length < 2) {
+    if (!query || query.length < 1) {
       res.json(ok("Resultados de búsqueda", { users: [] }));
       return;
     }
 
-    const users = await UserService.searchUsers(query);
+    const users = await UserService.searchUsers(query, 10, req.user!.id);
 
     res.json(ok("Resultados de búsqueda", { users }));
   },
