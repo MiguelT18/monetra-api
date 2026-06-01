@@ -1,5 +1,5 @@
 import { prisma as PrismaInstance } from "../lib/prisma.ts";
-import { FULL_PROFILE_SELECT, PROFILE_SELECT } from "../types/user.types.ts";
+import { FULL_PROFILE_SELECT, PROFILE_SELECT, USER_SEARCH_SELECT } from "../types/user.types.ts";
 import type { PrismaClient } from "@prisma/client";
 import type {
   UserDTO,
@@ -58,6 +58,20 @@ class UserService {
       where: { id },
       data: { role },
       select: PROFILE_SELECT,
+    });
+  }
+
+  async searchUsers(query: string, limit = 10) {
+    return this.prisma.profiles.findMany({
+      where: {
+        OR: [
+          { username: { contains: query, mode: "insensitive" } },
+          { fullname: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      select: USER_SEARCH_SELECT,
+      take: limit,
+      orderBy: { createdAt: "desc" },
     });
   }
 }

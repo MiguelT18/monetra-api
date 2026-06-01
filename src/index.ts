@@ -1,5 +1,6 @@
 import cors from "cors";
 import UserRoutes from "./routes/user.routes.ts";
+import UsersRoutes from "./routes/users.routes.ts";
 import ProductRoutes from "./routes/product.routes.ts";
 import express from "express";
 import { env } from "./config/env.ts";
@@ -17,6 +18,7 @@ app.use(generalLimiter);
 const port = env.PORT;
 
 app.use("/api/auth", UserRoutes);
+app.use("/api/users", UsersRoutes);
 app.use("/api/products", ProductRoutes);
 
 app.use(errorMiddleware);
