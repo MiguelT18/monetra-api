@@ -7,10 +7,15 @@ import {
   updateProductSchema,
   productIdParamSchema,
 } from "../schemas/product.schema.ts";
+import { uploadBase64Image } from "../utils/upload.ts";
 
 export const createProduct: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const data = createProductSchema.parse(req.body);
+
+    if (data.thumbnail) {
+      data.thumbnail = await uploadBase64Image(data.thumbnail, "products");
+    }
 
     const product = await ProductService.create(req.profile!.id, data);
 
@@ -51,6 +56,10 @@ export const updateProduct: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = productIdParamSchema.parse(req.params);
     const data = updateProductSchema.parse(req.body);
+
+    if (data.thumbnail) {
+      data.thumbnail = await uploadBase64Image(data.thumbnail, "products");
+    }
 
     const product = await ProductService.update(id, req.profile!.id, data);
 

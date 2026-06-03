@@ -31,6 +31,7 @@ model Products {
   title               String
   description         String
   price               Float
+  thumbnail           String?
   producerId          String
   status              ProductStatus  @default(DRAFT)
   affiliateEnabled    Boolean        @default(false)
@@ -102,7 +103,7 @@ model Enrollments {
 
 enum Role {
   STUDENT
-  PRODUCER
+  CREATOR
   AFFILIATE
 }
 

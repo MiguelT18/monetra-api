@@ -7,5 +7,6 @@ const router: IRouter = Router();
 router.use(authMiddleware);
 
 router.get("/search", UsersController.searchUsers);
+router.post("/avatar", UsersController.uploadAvatar);
 
 export default router;

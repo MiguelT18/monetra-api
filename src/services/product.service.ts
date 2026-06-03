@@ -20,6 +20,7 @@ class ProductService {
       title: input.title,
       description: input.description,
       price: input.price,
+      thumbnail: input.thumbnail ?? null,
       status: input.status ?? "DRAFT",
       affiliateEnabled: input.affiliateEnabled ?? false,
       affiliateCookieDays: input.affiliateCookieDays ?? 30,
@@ -115,6 +116,7 @@ class ProductService {
       ...(input.title !== undefined && { title: input.title }),
       ...(input.description !== undefined && { description: input.description }),
       ...(input.price !== undefined && { price: input.price }),
+      ...(input.thumbnail !== undefined && { thumbnail: input.thumbnail }),
       ...(input.status !== undefined && { status: input.status }),
       ...(input.affiliateEnabled !== undefined && {
         affiliateEnabled: input.affiliateEnabled,

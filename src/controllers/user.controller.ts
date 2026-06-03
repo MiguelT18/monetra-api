@@ -303,7 +303,7 @@ export const updateRole: RequestHandler = asyncHandler(
 
     const { role } = req.body;
 
-    const VALID_ROLES = ["STUDENT", "PRODUCER", "AFFILIATE"];
+    const VALID_ROLES = ["STUDENT", "CREATOR", "AFFILIATE"];
 
     if (!role || !VALID_ROLES.includes(role)) {
       throw new HttpError(400, "Rol inválido");
@@ -349,21 +349,19 @@ export const refreshSession: RequestHandler = asyncHandler(
       throw new HttpError(400, "Token de refresco inválido");
     }
 
-    const { access_token, refresh_token } = data.session;
+    const userId = data.session.user?.id;
+    let role = "STUDENT";
+    if (userId) {
+      const user = await UserService.getFullUser(userId);
+      if (user) role = user.role;
+    }
 
-    res.cookie("access_token", access_token, {
-      httpOnly: true,
-      secure: env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 1000,
-    });
-
-    res.cookie("refresh_token", refresh_token, {
-      httpOnly: true,
-      secure: env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookies(
+      res,
+      data.session.access_token,
+      data.session.refresh_token,
+      role,
+    );
 
     res.json(ok("Sesión refrescada"));
   },

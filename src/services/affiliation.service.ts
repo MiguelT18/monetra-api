@@ -3,7 +3,7 @@ import type { AffiliateEligibility } from "../types/affiliation.types.ts";
 import ProductService from "./product.service.ts";
 
 /**
- * Afiliaciones: unir afiliados a productos según reglas del productor.
+ * Afiliaciones: unir afiliados a productos según reglas del creador.
  * CRUD de afiliaciones — implementación en fase 2.
  */
 class AffiliationService {
@@ -25,7 +25,7 @@ class AffiliationService {
     }
 
     if (!product.affiliateEnabled) {
-      reasons.push("El productor no tiene activo el programa de afiliados");
+      reasons.push("El creador no tiene activo el programa de afiliados");
     }
 
     if (product.commissionRate == null) {

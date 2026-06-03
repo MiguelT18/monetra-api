@@ -13,9 +13,9 @@ router.use(authMiddleware, loadProfile);
 // Catálogo público (autenticado): estudiantes y afiliados exploran productos publicados
 router.get("/catalog", ProductController.listCatalog);
 
-// Productor: CRUD de sus productos
-router.get("/mine", requireRole("PRODUCER"), ProductController.listMyProducts);
-router.post("/", requireRole("PRODUCER"), productWriteLimiter, ProductController.createProduct);
+// Creador: CRUD de sus productos
+router.get("/mine", requireRole("CREATOR"), ProductController.listMyProducts);
+router.post("/", requireRole("CREATOR"), productWriteLimiter, ProductController.createProduct);
 
 // Afiliado: elegibilidad y alta (alta = fase 2)
 router.get(
@@ -43,7 +43,7 @@ router.post(
 
 // Detalle, actualización y borrado por id (rutas con :id al final)
 router.get("/:id", ProductController.getProduct);
-router.put("/:id", requireRole("PRODUCER"), productWriteLimiter, ProductController.updateProduct);
-router.delete("/:id", requireRole("PRODUCER"), ProductController.deleteProduct);
+router.put("/:id", requireRole("CREATOR"), productWriteLimiter, ProductController.updateProduct);
+router.delete("/:id", requireRole("CREATOR"), ProductController.deleteProduct);
 
 export default router;

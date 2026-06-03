@@ -45,6 +45,7 @@ export const FULL_PROFILE_SELECT = {
   bio: true,
   avatar: true,
   role: true,
+  phone: true,
 
   gamifications: {
     select: {

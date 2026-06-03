@@ -16,5 +16,6 @@ export const updateProfileSchema = z.object({
   fullname: z.string().min(2).max(100).optional(),
   bio: z.string().max(160).optional().nullable(),
   avatar: avatarSchema.optional().nullable(),
-  role: z.enum(["PRODUCER", "AFFILIATE", "STUDENT"]).optional(),
+  phone: z.string().max(20).optional().nullable(),
+  role: z.enum(["CREATOR", "AFFILIATE", "STUDENT"]).optional(),
 });

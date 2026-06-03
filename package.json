@@ -16,6 +16,9 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "onlyBuiltDependencies": ["sharp"]
+  },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -36,6 +39,7 @@
     "dotenv": "^17.4.2",
     "express-rate-limit": "^8.5.2",
     "pg": "^8.20.0",
+    "sharp": "^0.34.5",
     "zod": "^4.3.6"
   }
 }

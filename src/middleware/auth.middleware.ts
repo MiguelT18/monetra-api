@@ -1,21 +1,52 @@
 import type { Response, Request, NextFunction } from "express";
 import { supabase } from "../lib/supabase.ts";
+import { env } from "../config/env.ts";
 
 export async function authMiddleware(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const token = req.cookies?.access_token;
+  let token = req.cookies?.access_token;
+  const refreshToken = req.cookies?.refresh_token;
 
   if (!token) {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
 
-  const { data, error } = await supabase.auth.getUser(token);
+  let { data, error } = await supabase.auth.getUser(token);
 
-  if (error || !data.user) {
+  if ((error || !data?.user) && refreshToken) {
+    const { data: refreshData, error: refreshError } =
+      await supabase.auth.refreshSession({
+        refresh_token: refreshToken,
+      });
+
+    if (!refreshError && refreshData?.session) {
+      const isProduction = env.NODE_ENV === "production";
+      res.cookie("access_token", refreshData.session.access_token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 1000,
+      });
+      res.cookie("refresh_token", refreshData.session.refresh_token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+
+      const result = await supabase.auth.getUser(
+        refreshData.session.access_token,
+      );
+      data = result.data;
+      error = result.error;
+    }
+  }
+
+  if (error || !data?.user) {
     res.status(401).json({ message: "Invalid token" });
     return;
   }
