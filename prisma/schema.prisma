@@ -10,6 +10,7 @@ model Profiles {
   id            String         @id
   username      String?        @unique
   role          Role           @default(STUDENT)
+  banned        Boolean        @default(false)
   createdAt     DateTime       @default(now())
   avatar        String?
   bio           String?
@@ -19,11 +20,29 @@ model Profiles {
   affiliations  Affiliations[]
   commissions   Commissions[]
   enrollments   Enrollments[]
-  gamifications Gamifications?
-  orders        Orders[]
-  products      Products[]
+  gamifications  Gamifications?
+  notifications  Notifications[]  @relation("UserNotifications")
+  sentNotifications Notifications[] @relation("SentNotifications")
+  orders         Orders[]
+  products       Products[]
+  achievements   UserAchievement[]
 
   @@map("Profiles")
+}
+
+model Notifications {
+  id        String   @id @default(uuid())
+  userId    String
+  senderId  String?
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      Profiles @relation("UserNotifications", fields: [userId], references: [id])
+  sender    Profiles? @relation("SentNotifications", fields: [senderId], references: [id])
+
+  @@index([userId])
+  @@map("Notifications")
 }
 
 model Products {
@@ -90,6 +109,40 @@ model Gamifications {
   user      Profiles @relation(fields: [userId], references: [id])
 }
 
+model Achievement {
+  id          String            @id @default(uuid())
+  key         String            @unique
+  title       String
+  description String
+  icon        String
+  xpReward    Int               @default(0)
+  role        Role
+  createdAt   DateTime          @default(now())
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String            @id @default(uuid())
+  userId        String
+  achievementId String
+  status        AchievementStatus @default(LOCKED)
+  progress      Int               @default(0)
+  unlockedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  user          Profiles          @relation(fields: [userId], references: [id])
+  achievement   Achievement       @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+enum AchievementStatus {
+  UNLOCKED
+  IN_PROGRESS
+  LOCKED
+}
+
 model Enrollments {
   id        String   @id @default(uuid())
   productId String
@@ -105,6 +158,7 @@ enum Role {
   STUDENT
   CREATOR
   AFFILIATE
+  ADMIN
 }
 
 enum ProductStatus {

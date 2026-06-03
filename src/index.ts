@@ -2,6 +2,8 @@ import cors from "cors";
 import UserRoutes from "./routes/user.routes.ts";
 import UsersRoutes from "./routes/users.routes.ts";
 import ProductRoutes from "./routes/product.routes.ts";
+import AchievementRoutes from "./routes/achievement.routes.ts";
+import NotificationRoutes from "./routes/notification.routes.ts";
 import express from "express";
 import { env } from "./config/env.ts";
 import cookieParser from "cookie-parser";
@@ -21,6 +23,8 @@ const port = env.PORT;
 app.use("/api/auth", UserRoutes);
 app.use("/api/users", UsersRoutes);
 app.use("/api/products", ProductRoutes);
+app.use("/api/achievements", AchievementRoutes);
+app.use("/api/notifications", NotificationRoutes);
 
 app.use(errorMiddleware);
 

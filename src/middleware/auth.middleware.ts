@@ -1,6 +1,7 @@
 import type { Response, Request, NextFunction } from "express";
 import { supabase } from "../lib/supabase.ts";
 import { env } from "../config/env.ts";
+import { prisma as PrismaInstance } from "../lib/prisma.ts";
 
 export async function authMiddleware(
   req: Request,
@@ -52,6 +53,16 @@ export async function authMiddleware(
   }
 
   req.user = data.user;
+
+  const profile = await PrismaInstance.profiles.findUnique({
+    where: { id: data.user.id },
+    select: { id: true, banned: true },
+  });
+
+  if (profile?.banned) {
+    res.status(403).json({ message: "Tu cuenta ha sido suspendida" });
+    return;
+  }
 
   next();
 }

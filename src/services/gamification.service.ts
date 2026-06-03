@@ -61,8 +61,33 @@ class GamificationService {
     });
   }
 
+  private xpForNextLevel(level: number): number {
+    const linear = 50 * level;
+    const logarithmic = 80 * Math.log(level + 1);
+    const exponential = 5 * level * level;
+    return Math.max(Math.floor(linear + logarithmic + exponential), 1);
+  }
+
+  private totalXpForLevel(level: number): number {
+    let total = 0;
+    for (let i = 1; i < level; i++) {
+      total += this.xpForNextLevel(i);
+    }
+    return total;
+  }
+
   private calculateLevel(xp: number): number {
-    return Math.floor(xp / 100 + 1);
+    let low = 1;
+    let high = 1000;
+    while (low < high) {
+      const mid = Math.floor((low + high + 1) / 2);
+      if (this.totalXpForLevel(mid) <= xp) {
+        low = mid;
+      } else {
+        high = mid - 1;
+      }
+    }
+    return low;
   }
 }
 

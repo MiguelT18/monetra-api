@@ -4,6 +4,8 @@ import { ok } from "../utils/helpers.ts";
 import UserService from "../services/user.service.ts";
 import { supabaseAdmin } from "../lib/supabase.ts";
 import sharp from "sharp";
+import { HttpError } from "../errors/http-error.ts";
+import type { Role } from "@prisma/client";
 
 const AVATAR_MAX_BYTES = 500_000;
 
@@ -19,6 +21,56 @@ export const searchUsers: RequestHandler = asyncHandler(
     const users = await UserService.searchUsers(query, 10, req.user!.id);
 
     res.json(ok("Resultados de búsqueda", { users }));
+  },
+);
+
+export const getAll: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const search = req.query.search as string | undefined;
+    const role = req.query.role as string | undefined;
+    const offset = req.query.offset ? Number(req.query.offset) : undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+
+    const result = await UserService.getAllUsers({
+      ...(search !== undefined ? { search } : {}),
+      ...(role !== undefined ? { role } : {}),
+      ...(offset !== undefined ? { offset } : {}),
+      ...(limit !== undefined ? { limit } : {}),
+    });
+
+    res.json(ok("Listado de usuarios", result));
+  },
+);
+
+export const updateRole: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const { role } = req.body;
+
+    const VALID_ROLES = ["STUDENT", "CREATOR", "AFFILIATE", "ADMIN"];
+
+    if (!role || !VALID_ROLES.includes(role)) {
+      throw new HttpError(400, "Rol inválido");
+    }
+
+    const user = await UserService.updateUserRole(id, role as Role);
+
+    res.json(ok("Rol actualizado correctamente", { user }));
+  },
+);
+
+export const toggleBan: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const { banned } = req.body;
+
+    if (typeof banned !== "boolean") {
+      throw new HttpError(400, "El campo 'banned' debe ser booleano");
+    }
+
+    const user = await UserService.toggleBan(id, banned);
+
+    res.json(ok(banned ? "Usuario suspendido" : "Usuario restaurado", { user }));
   },
 );
 

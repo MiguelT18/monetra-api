@@ -18,6 +18,10 @@ function setCachedProfile(userId: string, profile: unknown) {
   profileCache.set(userId, { profile, expiry: Date.now() + CACHE_TTL });
 }
 
+export function invalidateProfileCache(userId: string) {
+  profileCache.delete(userId);
+}
+
 export const loadProfile: RequestHandler = asyncHandler(
   async (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user?.id) {

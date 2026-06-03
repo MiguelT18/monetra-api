@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler.ts";
 import { updateProfileSchema } from "../schemas/user.schema.ts";
 import { removeUndefined } from "../utils/helpers.ts";
 import { HttpError } from "../errors/http-error.ts";
+import { invalidateProfileCache } from "../middleware/profile.middleware.ts";
 
 const OAUTH_PROVIDERS = ["google", "github"] as const;
 type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
@@ -310,6 +311,7 @@ export const updateRole: RequestHandler = asyncHandler(
     }
 
     const user = await UserService.updateRole(userId, role);
+    invalidateProfileCache(userId);
 
     res.json(ok("Rol actualizado correctamente", { user }));
   },
