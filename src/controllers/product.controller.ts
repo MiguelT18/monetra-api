@@ -25,9 +25,12 @@ export const createProduct: RequestHandler = asyncHandler(
 
 export const listMyProducts: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const products = await ProductService.listByProducer(req.profile!.id);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
 
-    res.json(ok("Tus productos", { products }));
+    const result = await ProductService.listByProducer(req.profile!.id, page, limit);
+
+    res.json(ok("Tus productos", result));
   },
 );
 

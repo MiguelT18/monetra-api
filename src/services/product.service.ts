@@ -36,12 +36,27 @@ class ProductService {
     });
   }
 
-  async listByProducer(producerId: string) {
-    return this.prisma.products.findMany({
-      where: { producerId },
-      select: PRODUCT_WITH_PRODUCER_SELECT,
-      orderBy: { createdAt: "desc" },
-    });
+  async listByProducer(producerId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [products, total] = await Promise.all([
+      this.prisma.products.findMany({
+        where: { producerId },
+        select: PRODUCT_WITH_PRODUCER_SELECT,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      this.prisma.products.count({
+        where: { producerId },
+      }),
+    ]);
+    return {
+      products,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async listPublishedCatalog(page = 1, limit = 12) {
