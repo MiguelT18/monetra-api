@@ -1,6 +1,7 @@
 import { prisma as PrismaInstance } from "../lib/prisma.ts";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { HttpError } from "../errors/http-error.ts";
+import NotificationService from "./notification.service.ts";
 import {
   PRODUCT_SELECT,
   PRODUCT_WITH_PRODUCER_SELECT,
@@ -21,7 +22,7 @@ class ProductService {
       description: input.description,
       price: input.price,
       thumbnail: input.thumbnail ?? null,
-      status: input.status ?? "DRAFT",
+      status: "DRAFT",
       affiliateEnabled: input.affiliateEnabled ?? false,
       affiliateCookieDays: input.affiliateCookieDays ?? 30,
       ...(input.commissionRate != null
@@ -112,12 +113,15 @@ class ProductService {
     await this.getByIdForProducer(productId, producerId);
     this.validateAffiliateConfig(input);
 
+    if (input.status !== undefined && input.status !== "DRAFT") {
+      throw new HttpError(403, "Solo puedes guardar como borrador. Usa 'Enviar a revisión' para solicitar publicación.");
+    }
+
     const updateData = {
       ...(input.title !== undefined && { title: input.title }),
       ...(input.description !== undefined && { description: input.description }),
       ...(input.price !== undefined && { price: input.price }),
       ...(input.thumbnail !== undefined && { thumbnail: input.thumbnail }),
-      ...(input.status !== undefined && { status: input.status }),
       ...(input.affiliateEnabled !== undefined && {
         affiliateEnabled: input.affiliateEnabled,
       }),
@@ -137,6 +141,58 @@ class ProductService {
       where: { id: productId },
       data: updateData,
       select: PRODUCT_SELECT,
+    });
+  }
+
+  async submitForReview(productId: string, producerId: string) {
+    const product = await this.getByIdForProducer(productId, producerId);
+
+    if (product.status !== "DRAFT" && product.status !== "REJECTED") {
+      throw new HttpError(400, "Solo puedes enviar a revisión productos en borrador o rechazados");
+    }
+
+    return this.prisma.products.update({
+      where: { id: productId },
+      data: { status: "UNDER_REVIEW" },
+      select: PRODUCT_SELECT,
+    });
+  }
+
+  async review(productId: string, adminId: string, action: "PUBLISHED" | "REJECTED") {
+    const product = await this.prisma.products.findUnique({
+      where: { id: productId },
+      select: { id: true, status: true, producerId: true, title: true },
+    });
+
+    if (!product) throw new HttpError(404, "Producto no encontrado");
+    if (product.status !== "UNDER_REVIEW") {
+      throw new HttpError(400, "El producto no está pendiente de revisión");
+    }
+
+    const updated = await this.prisma.products.update({
+      where: { id: productId },
+      data: { status: action },
+      select: PRODUCT_SELECT,
+    });
+
+    const isApproved = action === "PUBLISHED";
+    await NotificationService.create({
+      userId: product.producerId,
+      senderId: adminId,
+      title: isApproved ? "Producto aprobado" : "Producto rechazado",
+      message: isApproved
+        ? `Tu producto "${product.title}" ha sido aprobado y publicado.`
+        : `Tu producto "${product.title}" ha sido rechazado.`,
+    });
+
+    return updated;
+  }
+
+  async listPendingReview() {
+    return this.prisma.products.findMany({
+      where: { status: "UNDER_REVIEW" },
+      select: PRODUCT_WITH_PRODUCER_AND_COUNT,
+      orderBy: { updatedAt: "desc" },
     });
   }
 

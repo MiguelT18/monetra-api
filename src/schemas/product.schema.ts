@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const productStatusSchema = z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]);
+const productStatusSchema = z.enum(["DRAFT", "UNDER_REVIEW", "PUBLISHED", "REJECTED", "ARCHIVED"]);
 
 const affiliateValidation = (data: any, ctx: any) => {
   if (data.affiliateEnabled && data.commissionRate == null) {

@@ -163,7 +163,9 @@ enum Role {
 
 enum ProductStatus {
   DRAFT
+  UNDER_REVIEW
   PUBLISHED
+  REJECTED
   ARCHIVED
 }
 

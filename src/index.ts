@@ -15,7 +15,10 @@ const app = express();
 
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({
+  origin: env.CORS_ORIGINS?.split(",").map((o) => o.trim()) ?? "*",
+  credentials: true,
+}));
 app.use(generalLimiter);
 
 const port = env.PORT;

@@ -133,7 +133,7 @@ export const login: RequestHandler = asyncHandler(
 
     setAuthCookies(res, access_token, refresh_token, user.role);
 
-    res.json(ok("Iniciaste sesión!", { user }));
+    res.json(ok("Iniciaste sesión!", { user, access_token, refresh_token }));
   },
 );
 
@@ -187,15 +187,21 @@ export const recoverySession: RequestHandler = asyncHandler(
       user.role,
     );
 
-    res.json(ok("Sesión de recuperación iniciada", { user }));
+    res.json(ok("Sesión de recuperación iniciada", { user, access_token: data.session.access_token, refresh_token: data.session.refresh_token }));
   },
 );
 
 export const updatePassword: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const { password } = req.body;
-    const accessToken = req.cookies?.access_token;
-    const refreshToken = req.cookies?.refresh_token;
+    const authHeader = req.headers.authorization;
+    const accessToken =
+      authHeader?.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : req.cookies?.access_token;
+    const refreshToken =
+      (req.headers["x-refresh-token"] as string | undefined) ??
+      req.cookies?.refresh_token;
 
     if (!password || typeof password !== "string" || password.length < 8) {
       throw new HttpError(400, "La contraseña debe tener al menos 8 caracteres");
@@ -228,7 +234,10 @@ export const updatePassword: RequestHandler = asyncHandler(
       (await UserService.getFullUser(sessionData.user!.id))?.role ?? "STUDENT",
     );
 
-    res.json(ok("Contraseña actualizada correctamente"));
+    res.json(ok("Contraseña actualizada correctamente", {
+      access_token: sessionData.session.access_token,
+      refresh_token: sessionData.session.refresh_token,
+    }));
   },
 );
 
@@ -279,7 +288,7 @@ export const oauthCallback: RequestHandler = asyncHandler(
       user.role,
     );
 
-    res.json(ok("Iniciaste sesión!", { user }));
+    res.json(ok("Iniciaste sesión!", { user, access_token: data.session.access_token, refresh_token: data.session.refresh_token }));
   },
 );
 
@@ -337,7 +346,9 @@ export const getUserProfile: RequestHandler = asyncHandler(
 
 export const refreshSession: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const refreshToken = req.cookies?.refresh_token;
+    const refreshToken =
+      (req.headers["x-refresh-token"] as string | undefined) ??
+      req.cookies?.refresh_token;
 
     if (!refreshToken) {
       throw new HttpError(400, "Falta el token de refresco");
@@ -365,13 +376,20 @@ export const refreshSession: RequestHandler = asyncHandler(
       role,
     );
 
-    res.json(ok("Sesión refrescada"));
+    res.json(ok("Sesión refrescada", {
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    }));
   },
 );
 
 export const logout: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const accessToken = req.cookies?.access_token;
+    const authHeader = req.headers.authorization;
+    const accessToken =
+      authHeader?.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : req.cookies?.access_token;
 
     if (accessToken) {
       await supabase.auth.signOut();

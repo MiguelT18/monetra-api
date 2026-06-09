@@ -2,6 +2,7 @@ import type { Request, Response, RequestHandler } from "express";
 import { asyncHandler } from "../utils/asyncHandler.ts";
 import { ok } from "../utils/helpers.ts";
 import UserService from "../services/user.service.ts";
+import { invalidateProfileCache } from "../middleware/profile.middleware.ts";
 import { supabaseAdmin } from "../lib/supabase.ts";
 import sharp from "sharp";
 import { HttpError } from "../errors/http-error.ts";
@@ -54,6 +55,7 @@ export const updateRole: RequestHandler = asyncHandler(
     }
 
     const user = await UserService.updateUserRole(id, role as Role);
+    invalidateProfileCache(id);
 
     res.json(ok("Rol actualizado correctamente", { user }));
   },

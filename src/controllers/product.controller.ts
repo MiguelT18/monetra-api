@@ -80,3 +80,41 @@ export const deleteProduct: RequestHandler = asyncHandler(
     res.json(ok(message, result));
   },
 );
+
+export const submitForReview: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = productIdParamSchema.parse(req.params);
+
+    const product = await ProductService.submitForReview(id, req.profile!.id);
+
+    res.json(ok("Producto enviado a revisión correctamente", { product }));
+  },
+);
+
+export const reviewProduct: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = productIdParamSchema.parse(req.params);
+    const { action } = req.body as { action: "PUBLISHED" | "REJECTED" };
+
+    if (!["PUBLISHED", "REJECTED"].includes(action)) {
+      res.status(400).json({ message: "Acción inválida. Usa PUBLISHED o REJECTED" });
+      return;
+    }
+
+    const product = await ProductService.review(id, req.profile!.id, action);
+
+    const message = action === "PUBLISHED"
+      ? "Producto aprobado y publicado"
+      : "Producto rechazado";
+
+    res.json(ok(message, { product }));
+  },
+);
+
+export const listPendingReviews: RequestHandler = asyncHandler(
+  async (_req: Request, res: Response) => {
+    const products = await ProductService.listPendingReview();
+
+    res.json(ok("Productos pendientes de revisión", { products }));
+  },
+);

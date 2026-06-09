@@ -8,8 +8,14 @@ export async function authMiddleware(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  let token = req.cookies?.access_token;
-  const refreshToken = req.cookies?.refresh_token;
+  const authHeader = req.headers.authorization;
+  let token = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : req.cookies?.access_token;
+
+  const refreshToken =
+    (req.headers["x-refresh-token"] as string | undefined) ??
+    req.cookies?.refresh_token;
 
   if (!token) {
     res.status(401).json({ message: "Unauthorized" });

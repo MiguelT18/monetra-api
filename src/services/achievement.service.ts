@@ -1,5 +1,6 @@
 import { prisma as PrismaInstance } from "../lib/prisma.ts";
 import type { PrismaClient, AchievementStatus } from "@prisma/client";
+import GamificationService from "./gamification.service.ts";
 
 class AchievementService {
   constructor(private prisma: PrismaClient = PrismaInstance) {}
@@ -84,7 +85,7 @@ class AchievementService {
       data.unlockedAt = new Date();
     }
 
-    return this.prisma.userAchievement.upsert({
+    const result = await this.prisma.userAchievement.upsert({
       where: {
         userId_achievementId: {
           userId,
@@ -98,6 +99,12 @@ class AchievementService {
         ...data,
       },
     });
+
+    if (status === "UNLOCKED" && achievement.xpReward > 0) {
+      await GamificationService.addXP(userId, achievement.xpReward);
+    }
+
+    return result;
   }
 
   async getAllTemplates() {
