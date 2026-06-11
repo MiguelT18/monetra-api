@@ -122,6 +122,14 @@ class UserService {
     });
   }
 
+  async makeAdmin(id: string): Promise<ProfileResponse> {
+    return this.prisma.profiles.update({
+      where: { id },
+      data: { role: "ADMIN" },
+      select: PROFILE_SELECT,
+    });
+  }
+
   async toggleBan(id: string, banned: boolean) {
     return this.prisma.profiles.update({
       where: { id },

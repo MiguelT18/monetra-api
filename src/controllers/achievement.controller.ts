@@ -1,7 +1,12 @@
 import type { Request, RequestHandler, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler.ts";
-import { ok } from "../utils/helpers.ts";
+import { ok, removeUndefined } from "../utils/helpers.ts";
 import achievementService from "../services/achievement.service.ts";
+import {
+  createAchievementSchema,
+  updateAchievementSchema,
+  updateProgressSchema,
+} from "../schemas/achievement.schema.ts";
 
 export const getMyAchievements: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
@@ -18,14 +23,7 @@ export const getMyAchievements: RequestHandler = asyncHandler(
 export const updateProgress: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const profile = req.profile!;
-    const { achievementKey, progress, status } = req.body;
-
-    if (!achievementKey || progress === undefined) {
-      res
-        .status(400)
-        .json({ message: "achievementKey and progress are required" });
-      return;
-    }
+    const { achievementKey, progress, status } = updateProgressSchema.parse(req.body);
 
     const result = await achievementService.updateProgress(
       profile.id,
@@ -46,19 +44,14 @@ export const getAllTemplates: RequestHandler = asyncHandler(
 
 export const createTemplate: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const { key, title, description, icon, xpReward, role } = req.body;
-
-    if (!key || !title || !description || !icon || !role) {
-      res.status(400).json({ message: "Missing required fields" });
-      return;
-    }
+    const { key, title, description, icon, xpReward, role } = createAchievementSchema.parse(req.body);
 
     const template = await achievementService.createTemplate({
       key,
       title,
       description,
       icon,
-      xpReward: xpReward ?? 0,
+      xpReward,
       role,
     });
     res.status(201).json(ok("Achievement template created", template));
@@ -68,15 +61,9 @@ export const createTemplate: RequestHandler = asyncHandler(
 export const updateTemplate: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const id = req.params.id as string;
-    const { title, description, icon, xpReward, role } = req.body;
+    const data = removeUndefined(updateAchievementSchema.parse(req.body));
 
-    const template = await achievementService.updateTemplate(id, {
-      title,
-      description,
-      icon,
-      xpReward,
-      role,
-    });
+    const template = await achievementService.updateTemplate(id, data);
     res.status(200).json(ok("Achievement template updated", template));
   },
 );

@@ -49,7 +49,7 @@ export const getProduct: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = productIdParamSchema.parse(req.params);
 
-    const product = await ProductService.getAccessible(id, req.profile!.id);
+    const product = await ProductService.getAccessible(id, req.profile!.id, req.profile!.role);
 
     res.json(ok("Producto obtenido", { product }));
   },
@@ -119,5 +119,15 @@ export const listPendingReviews: RequestHandler = asyncHandler(
     const products = await ProductService.listPendingReview();
 
     res.json(ok("Productos pendientes de revisión", { products }));
+  },
+);
+
+export const getProductPreview: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = productIdParamSchema.parse(req.params);
+
+    const result = await ProductService.getPreview(id);
+
+    res.json(ok("Vista previa del producto", result));
   },
 );

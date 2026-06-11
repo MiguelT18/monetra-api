@@ -49,6 +49,7 @@ router.get("/admin/pending-reviews", requireRole("ADMIN"), ProductController.lis
 router.post("/:id/review", requireRole("ADMIN"), ProductController.reviewProduct);
 
 // Detalle, actualización y borrado por id (rutas con :id al final)
+router.get("/:id/preview", ProductController.getProductPreview);
 router.get("/:id", ProductController.getProduct);
 router.put("/:id", requireRole("CREATOR"), productWriteLimiter, ProductController.updateProduct);
 router.delete("/:id", requireRole("CREATOR"), ProductController.deleteProduct);

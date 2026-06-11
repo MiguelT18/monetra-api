@@ -129,6 +129,10 @@ export const login: RequestHandler = asyncHandler(
       throw new HttpError(400, "Usuario no encontrado");
     }
 
+    if (user.banned) {
+      throw new HttpError(403, "Tu cuenta ha sido suspendida");
+    }
+
     const { access_token, refresh_token } = data.session;
 
     setAuthCookies(res, access_token, refresh_token, user.role);
@@ -179,6 +183,10 @@ export const recoverySession: RequestHandler = asyncHandler(
     }
 
     const user = await ensureProfileForAuthUser(data.user);
+
+    if (user.banned) {
+      throw new HttpError(403, "Tu cuenta ha sido suspendida");
+    }
 
     setAuthCookies(
       res,
@@ -281,6 +289,10 @@ export const oauthCallback: RequestHandler = asyncHandler(
 
     const user = await ensureProfileForAuthUser(data.user);
 
+    if (user.banned) {
+      throw new HttpError(403, "Tu cuenta ha sido suspendida");
+    }
+
     setAuthCookies(
       res,
       data.session.access_token,
@@ -313,7 +325,7 @@ export const updateRole: RequestHandler = asyncHandler(
 
     const { role } = req.body;
 
-    const VALID_ROLES = ["STUDENT", "CREATOR", "AFFILIATE"];
+    const VALID_ROLES = ["STUDENT", "CREATOR", "AFFILIATE", "ADMIN"];
 
     if (!role || !VALID_ROLES.includes(role)) {
       throw new HttpError(400, "Rol inválido");

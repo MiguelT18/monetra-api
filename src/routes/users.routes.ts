@@ -12,6 +12,7 @@ router.post("/avatar", UsersController.uploadAvatar);
 
 router.get("/", loadProfile, requireRole("ADMIN"), UsersController.getAll);
 router.patch("/:id/role", loadProfile, requireRole("ADMIN"), UsersController.updateRole);
+router.patch("/:id/make-admin", loadProfile, requireRole("ADMIN"), UsersController.makeAdmin);
 router.patch("/:id/ban", loadProfile, requireRole("ADMIN"), UsersController.toggleBan);
 
 export default router;

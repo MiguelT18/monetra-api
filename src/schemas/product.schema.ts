@@ -13,6 +13,16 @@ const affiliateValidation = (data: any, ctx: any) => {
   }
 };
 
+const lessonSchema = z.object({
+  title: z.string().min(1).max(200),
+  durationMinutes: z.number().int().positive().optional(),
+});
+
+const moduleSchema = z.object({
+  title: z.string().min(1).max(200),
+  lessons: z.array(lessonSchema).min(1),
+});
+
 export const createProductSchema = z
   .object({
     title: z.string().min(3).max(100),
@@ -23,6 +33,10 @@ export const createProductSchema = z
     affiliateEnabled: z.boolean().optional(),
     commissionRate: z.number().min(0).max(100).nullable().optional(),
     affiliateCookieDays: z.number().int().min(1).max(365).optional(),
+    introVideoUrl: z.string().url().nullable().optional(),
+    duration: z.number().int().positive().nullable().optional(),
+    rating: z.number().min(0).max(5).nullable().optional(),
+    modules: z.array(moduleSchema).nullable().optional(),
   })
   .superRefine(affiliateValidation);
 
@@ -36,6 +50,10 @@ export const updateProductSchema = z
     affiliateEnabled: z.boolean().optional(),
     commissionRate: z.number().min(0).max(100).nullable().optional(),
     affiliateCookieDays: z.number().int().min(1).max(365).optional(),
+    introVideoUrl: z.string().url().nullable().optional(),
+    duration: z.number().int().positive().nullable().optional(),
+    rating: z.number().min(0).max(5).nullable().optional(),
+    modules: z.array(moduleSchema).nullable().optional(),
   })
   .superRefine(affiliateValidation);
 

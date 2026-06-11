@@ -61,6 +61,17 @@ export const updateRole: RequestHandler = asyncHandler(
   },
 );
 
+export const makeAdmin: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+
+    const user = await UserService.makeAdmin(id);
+    invalidateProfileCache(id);
+
+    res.json(ok("Usuario promovido a administrador correctamente", { user }));
+  },
+);
+
 export const toggleBan: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const id = req.params.id as string;

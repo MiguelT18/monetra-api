@@ -1,16 +1,12 @@
 import type { Request, Response, RequestHandler } from "express";
 import { asyncHandler } from "../utils/asyncHandler.ts";
 import { ok } from "../utils/helpers.ts";
-import { HttpError } from "../errors/http-error.ts";
 import NotificationService from "../services/notification.service.ts";
+import { createNotificationSchema } from "../schemas/notification.schema.ts";
 
 export const send: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
-    const { userId, title, message } = req.body;
-
-    if (!userId || !title || !message) {
-      throw new HttpError(400, "Faltan campos requeridos (userId, title, message)");
-    }
+    const { userId, title, message } = createNotificationSchema.parse(req.body);
 
     const notification = await NotificationService.create({
       userId,
@@ -34,7 +30,20 @@ export const getUserNotifications: RequestHandler = asyncHandler(
       NotificationService.getTotalCount(userId),
     ]);
 
-    res.json(ok("Notificaciones obtenidas", { notifications, total }));
+    const isAdmin = req.profile?.role === "ADMIN";
+    const processedNotifications = isAdmin
+      ? notifications
+      : notifications.map((n) => {
+          const senderIsAdmin = n.sender?.role === "ADMIN";
+          if (!senderIsAdmin) return n;
+          return {
+            ...n,
+            senderId: null,
+            sender: { id: null, username: null, fullname: "Equipo de Soporte", role: "STUDENT" as const },
+          };
+        });
+
+    res.json(ok("Notificaciones obtenidas", { notifications: processedNotifications, total }));
   },
 );
 

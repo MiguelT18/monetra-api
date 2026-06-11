@@ -7,7 +7,7 @@ const router: IRouter = Router();
 
 router.use(authMiddleware);
 
-router.get("/", NotificationController.getUserNotifications);
+router.get("/", loadProfile, NotificationController.getUserNotifications);
 router.get("/unread-count", NotificationController.getUnreadCount);
 router.patch("/read-all", NotificationController.markAllRead);
 router.patch("/:id/read", NotificationController.markRead);

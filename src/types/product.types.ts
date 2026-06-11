@@ -10,6 +10,11 @@ export type { ProductStatus };
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 
+export type ModuleData = {
+  title: string;
+  lessons: { title: string; durationMinutes?: number }[];
+}[];
+
 export const productSelectArgs = Prisma.validator<Prisma.ProductsDefaultArgs>()({
   select: {
     id: true,
@@ -22,6 +27,10 @@ export const productSelectArgs = Prisma.validator<Prisma.ProductsDefaultArgs>()(
     affiliateEnabled: true,
     commissionRate: true,
     affiliateCookieDays: true,
+    introVideoUrl: true,
+    duration: true,
+    rating: true,
+    modules: true,
     createdAt: true,
     updatedAt: true,
   },
@@ -40,6 +49,10 @@ export const productWithProducerArgs =
       affiliateEnabled: true,
       commissionRate: true,
       affiliateCookieDays: true,
+      introVideoUrl: true,
+      duration: true,
+      rating: true,
+      modules: true,
       createdAt: true,
       updatedAt: true,
       producer: {

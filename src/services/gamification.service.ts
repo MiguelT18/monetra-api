@@ -20,6 +20,12 @@ class GamificationService {
     });
   }
 
+  async createUserProgress(userId: string) {
+    return this.prisma.gamifications.create({
+      data: { userId, xp: 0, level: 1 },
+    });
+  }
+
   async addXP(userId: string, xpToAdd: number) {
     return this.prisma.$transaction(async (tx) => {
       const current = await tx.gamifications.findUnique({
@@ -27,7 +33,9 @@ class GamificationService {
       });
 
       if (!current) {
-        throw new Error("Gamification profile not found");
+        return tx.gamifications.create({
+          data: { userId, xp: xpToAdd, level: this.calculateLevel(xpToAdd) },
+        });
       }
 
       const newXP = current.xp + xpToAdd;
@@ -74,6 +82,17 @@ class GamificationService {
       total += this.xpForNextLevel(i);
     }
     return total;
+  }
+
+  recommendXpReward(difficulty: "easy" | "medium" | "hard" | "epic") {
+    const base = this.xpForNextLevel(5);
+    const factors: Record<string, number> = {
+      easy: 0.15,
+      medium: 0.5,
+      hard: 0.8,
+      epic: 1.5,
+    };
+    return Math.round(base * (factors[difficulty] ?? 0.5));
   }
 
   private calculateLevel(xp: number): number {

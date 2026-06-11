@@ -4,6 +4,12 @@ import UsersRoutes from "./routes/users.routes.ts";
 import ProductRoutes from "./routes/product.routes.ts";
 import AchievementRoutes from "./routes/achievement.routes.ts";
 import NotificationRoutes from "./routes/notification.routes.ts";
+import OrderRoutes from "./routes/order.routes.ts";
+import GamificationRoutes from "./routes/gamification.routes.ts";
+import AffiliationRoutes from "./routes/affiliation.routes.ts";
+import EnrollmentRoutes from "./routes/enrollment.routes.ts";
+import CommissionRoutes from "./routes/commission.routes.ts";
+import ReviewRoutes from "./routes/review.routes.ts";
 import express from "express";
 import { env } from "./config/env.ts";
 import cookieParser from "cookie-parser";
@@ -28,32 +34,43 @@ app.use("/api/users", UsersRoutes);
 app.use("/api/products", ProductRoutes);
 app.use("/api/achievements", AchievementRoutes);
 app.use("/api/notifications", NotificationRoutes);
+app.use("/api/orders", OrderRoutes);
+app.use("/api/gamification", GamificationRoutes);
+app.use("/api/affiliations", AffiliationRoutes);
+app.use("/api/enrollments", EnrollmentRoutes);
+app.use("/api/commissions", CommissionRoutes);
+app.use("/api/products/:id/reviews", ReviewRoutes);
 
 app.use(errorMiddleware);
 
-async function ensureAvatarBucket() {
+const BUCKETS = [
+  { name: "avatars", fileSizeLimit: 524_288 },
+  { name: "products", fileSizeLimit: 524_288 },
+];
+
+async function ensureBucket(bucket: { name: string; fileSizeLimit: number }) {
   const { data: buckets } = await supabaseAdmin.storage.listBuckets();
-  const existing = buckets?.find((b) => b.name === "avatars");
+  const existing = buckets?.find((b) => b.name === bucket.name);
 
   if (!existing) {
-    const { error } = await supabaseAdmin.storage.createBucket("avatars", {
+    const { error } = await supabaseAdmin.storage.createBucket(bucket.name, {
       public: true,
-      fileSizeLimit: 524_288,
+      fileSizeLimit: bucket.fileSizeLimit,
     });
     if (error) {
-      console.error("[bucket create error]:", error);
+      console.error(`[bucket create error ${bucket.name}]:`, error);
     } else {
-      console.log("[storage] Bucket 'avatars' created");
+      console.log(`[storage] Bucket '${bucket.name}' created`);
     }
   } else if (!existing.public) {
-    const { error } = await supabaseAdmin.storage.updateBucket("avatars", {
+    const { error } = await supabaseAdmin.storage.updateBucket(bucket.name, {
       public: true,
-      fileSizeLimit: 524_288,
+      fileSizeLimit: bucket.fileSizeLimit,
     });
     if (error) {
-      console.error("[bucket update error]:", error);
+      console.error(`[bucket update error ${bucket.name}]:`, error);
     } else {
-      console.log("[storage] Bucket 'avatars' updated to public");
+      console.log(`[storage] Bucket '${bucket.name}' updated to public`);
     }
   }
 }
@@ -64,7 +81,7 @@ async function start() {
 
   if (isValidJWT) {
     try {
-      await ensureAvatarBucket();
+      await Promise.all(BUCKETS.map(ensureBucket));
     } catch (err) {
       console.error("[startup error]:", err);
     }

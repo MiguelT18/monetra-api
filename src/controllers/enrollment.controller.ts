@@ -4,7 +4,6 @@ import { ok } from "../utils/helpers.ts";
 import EnrollmentService from "../services/enrollment.service.ts";
 import { productIdParamSchema } from "../schemas/product.schema.ts";
 
-/** Comprueba si un estudiante puede acceder a un producto (sin matricular aún). */
 export const checkEnrollmentEligibility: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const { id: productId } = productIdParamSchema.parse(req.params);
@@ -19,9 +18,22 @@ export const checkEnrollmentEligibility: RequestHandler = asyncHandler(
 );
 
 export const enrollInProduct: RequestHandler = asyncHandler(
-  async (req: Request, _res: Response) => {
+  async (req: Request, res: Response) => {
     const { id: productId } = productIdParamSchema.parse(req.params);
 
-    await EnrollmentService.enroll(productId, req.profile!.id);
+    const enrollment = await EnrollmentService.enroll(productId, req.profile!.id);
+
+    res.status(201).json(ok("Inscripción realizada correctamente", { enrollment }));
+  },
+);
+
+export const listMyEnrollments: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+
+    const result = await EnrollmentService.listByStudent(req.profile!.id, page, limit);
+
+    res.json(ok("Tus inscripciones", result));
   },
 );
