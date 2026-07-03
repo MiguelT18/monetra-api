@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const roleEnum = z.enum(["STUDENT", "CREATOR", "AFFILIATE", "ADMIN"]);
+const roleEnum = z.enum(["ALL", "STUDENT", "CREATOR", "AFFILIATE", "ADMIN"]);
 
 export const createAchievementSchema = z.object({
   key: z.string().min(1, "key es requerido").max(50),

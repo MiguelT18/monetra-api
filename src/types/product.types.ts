@@ -27,7 +27,12 @@ export const productSelectArgs = Prisma.validator<Prisma.ProductsDefaultArgs>()(
     affiliateEnabled: true,
     commissionRate: true,
     affiliateCookieDays: true,
+    affiliateDescription: true,
+      affiliateVideoUrl: true,
     introVideoUrl: true,
+    category: true,
+    draftChanges: true,
+    previousValues: true,
     duration: true,
     rating: true,
     modules: true,
@@ -49,7 +54,12 @@ export const productWithProducerArgs =
       affiliateEnabled: true,
       commissionRate: true,
       affiliateCookieDays: true,
+      affiliateDescription: true,
+      affiliateVideoUrl: true,
       introVideoUrl: true,
+      category: true,
+      draftChanges: true,
+      previousValues: true,
       duration: true,
       rating: true,
       modules: true,
@@ -70,6 +80,8 @@ export const productWithProducerAndCountArgs =
   Prisma.validator<Prisma.ProductsDefaultArgs>()({
     select: {
       ...productWithProducerArgs.select,
+      draftChanges: true,
+      previousValues: true,
       _count: {
         select: {
           affiliations: true,

@@ -12,6 +12,7 @@ model Profiles {
   role          Role           @default(STUDENT)
   banned        Boolean        @default(false)
   createdAt     DateTime       @default(now())
+  lastSeenAt    DateTime?
   avatar        String?
   bio           String?
   fullname      String?
@@ -27,8 +28,58 @@ model Profiles {
   products       Products[]
   reviews        Reviews[]
   achievements   UserAchievement[]
+  profileCommentsReceived ProfileComments[] @relation("ProfileCommentsReceived")
+  profileCommentsWritten  ProfileComments[] @relation("ProfileCommentsWritten")
+  blockedBy              BlockedProfiles[]  @relation("Blocker")
+  blocking               BlockedProfiles[]  @relation("Blocked")
+  reportedComments       ReportedProfileComments[]
 
   @@map("Profiles")
+}
+
+model ProfileComments {
+  id        String   @id @default(uuid())
+  profileId String
+  userId    String
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   Profiles @relation("ProfileCommentsReceived", fields: [profileId], references: [id])
+  user      Profiles @relation("ProfileCommentsWritten", fields: [userId], references: [id])
+  reports   ReportedProfileComments[]
+
+  @@index([profileId])
+  @@index([userId])
+  @@map("ProfileComments")
+}
+
+model BlockedProfiles {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker   Profiles @relation("Blocker", fields: [blockerId], references: [id])
+  blocked   Profiles @relation("Blocked", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+  @@map("BlockedProfiles")
+}
+
+model ReportedProfileComments {
+  id        String   @id @default(uuid())
+  commentId String
+  reportedBy String
+  reason    String?
+  createdAt DateTime @default(now())
+  dismissed Boolean  @default(false)
+
+  comment   ProfileComments @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporter  Profiles @relation(fields: [reportedBy], references: [id])
+
+  @@index([commentId])
+  @@map("ReportedProfileComments")
 }
 
 model Notifications {
@@ -37,6 +88,7 @@ model Notifications {
   senderId  String?
   title     String
   message   String
+  link      String?
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
   user      Profiles @relation("UserNotifications", fields: [userId], references: [id])
@@ -54,11 +106,16 @@ model Products {
   thumbnail           String?
   producerId          String
   status              ProductStatus  @default(DRAFT)
-  affiliateEnabled    Boolean        @default(false)
-  commissionRate      Float?
-  affiliateCookieDays Int            @default(30)
-  introVideoUrl       String?
-  duration            Int?
+   affiliateEnabled    Boolean        @default(false)
+   commissionRate      Float?
+   affiliateCookieDays Int            @default(30)
+   affiliateDescription String?
+   affiliateVideoUrl    String?
+   introVideoUrl       String?
+  category            String?
+   draftChanges        Json?
+   previousValues      Json?
+   duration            Int?
   rating              Float?
   modules             Json?
   createdAt           DateTime       @default(now())
@@ -150,13 +207,15 @@ enum AchievementStatus {
 }
 
 model Enrollments {
-  id        String   @id @default(uuid())
-  productId String
-  userId    String
-  progress  Int
-  createdAt DateTime @default(now())
-  product   Products @relation(fields: [productId], references: [id])
-  user      Profiles @relation(fields: [userId], references: [id])
+  id               String   @id @default(uuid())
+  productId        String
+  userId           String
+  progress         Int
+  completedLessons Json?
+  moduleResults    Json?
+  createdAt        DateTime @default(now())
+  product          Products @relation(fields: [productId], references: [id])
+  user             Profiles @relation(fields: [userId], references: [id])
 
   @@unique([userId, productId])
 }
@@ -177,6 +236,7 @@ model Reviews {
 }
 
 enum Role {
+  ALL
   STUDENT
   CREATOR
   AFFILIATE

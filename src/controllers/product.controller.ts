@@ -14,7 +14,7 @@ export const createProduct: RequestHandler = asyncHandler(
     const data = createProductSchema.parse(req.body);
 
     if (data.thumbnail) {
-      data.thumbnail = await uploadBase64Image(data.thumbnail, "products");
+      data.thumbnail = await uploadBase64Image(data.thumbnail);
     }
 
     const product = await ProductService.create(req.profile!.id, data);
@@ -61,7 +61,7 @@ export const updateProduct: RequestHandler = asyncHandler(
     const data = updateProductSchema.parse(req.body);
 
     if (data.thumbnail) {
-      data.thumbnail = await uploadBase64Image(data.thumbnail, "products");
+      data.thumbnail = await uploadBase64Image(data.thumbnail);
     }
 
     const product = await ProductService.update(id, req.profile!.id, data);
@@ -122,6 +122,22 @@ export const listPendingReviews: RequestHandler = asyncHandler(
   },
 );
 
+export const getLessonPreviewToken: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = productIdParamSchema.parse(req.params);
+    const { moduleIndex, lessonIndex } = req.body as { moduleIndex: number; lessonIndex: number };
+
+    if (typeof moduleIndex !== "number" || typeof lessonIndex !== "number") {
+      res.status(400).json({ message: "moduleIndex y lessonIndex son requeridos" });
+      return;
+    }
+
+    const result = await ProductService.getLessonHlsUrl(id, moduleIndex, lessonIndex);
+
+    res.json(ok("URL de video obtenida", result));
+  },
+);
+
 export const getProductPreview: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = productIdParamSchema.parse(req.params);
@@ -129,5 +145,15 @@ export const getProductPreview: RequestHandler = asyncHandler(
     const result = await ProductService.getPreview(id);
 
     res.json(ok("Vista previa del producto", result));
+  },
+);
+
+export const getProductAnalytics: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = productIdParamSchema.parse(req.params);
+
+    const result = await ProductService.getAnalytics(id);
+
+    res.json(ok("Analíticas del producto", result));
   },
 );

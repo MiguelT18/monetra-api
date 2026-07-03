@@ -10,4 +10,10 @@ router.use(requireRole("STUDENT"));
 
 router.get("/", EnrollmentController.listMyEnrollments);
 
+router.get("/:enrollmentId/content", EnrollmentController.getCourseContent);
+router.post("/:enrollmentId/complete-lesson", EnrollmentController.completeLesson);
+router.post("/:enrollmentId/video-token", EnrollmentController.getSignedVideoUrl);
+router.get("/:enrollmentId/evaluation/:moduleIndex", EnrollmentController.getModuleEvaluation);
+router.post("/:enrollmentId/evaluation/:moduleIndex/submit", EnrollmentController.submitModuleEvaluation);
+
 export default router;

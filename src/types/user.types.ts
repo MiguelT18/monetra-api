@@ -47,11 +47,18 @@ export const FULL_PROFILE_SELECT = {
   role: true,
   phone: true,
   banned: true,
+  lastSeenAt: true,
 
   gamifications: {
     select: {
       xp: true,
       level: true,
+    },
+  },
+
+  _count: {
+    select: {
+      products: true,
     },
   },
 } as const;

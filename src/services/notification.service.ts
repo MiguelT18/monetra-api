@@ -7,6 +7,7 @@ const NOTIFICATION_WITH_SENDER = {
   senderId: true,
   title: true,
   message: true,
+  link: true,
   read: true,
   createdAt: true,
   sender: {
@@ -27,6 +28,7 @@ class NotificationService {
     senderId?: string;
     title: string;
     message: string;
+    link?: string;
   }) {
     return this.prisma.notifications.create({ data });
   }

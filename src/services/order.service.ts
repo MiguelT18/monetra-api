@@ -101,6 +101,7 @@ class OrderService {
         userId: product.producerId,
         title: "¡Nueva venta!",
         message: `Tu producto "${product.title}" ha sido vendido.`,
+        link: "/user/earnings",
       });
     } catch {
       // notification failure shouldn't break the purchase

@@ -5,6 +5,8 @@ import { loadProfile, requireRole } from "../middleware/profile.middleware.ts";
 
 const router: IRouter = Router();
 
+router.get("/:username/public-profile", UsersController.getPublicProfile);
+
 router.use(authMiddleware);
 
 router.get("/search", UsersController.searchUsers);

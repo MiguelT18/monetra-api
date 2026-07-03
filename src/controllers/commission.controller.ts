@@ -21,3 +21,18 @@ export const getStats: RequestHandler = asyncHandler(
     res.json(ok("Estadísticas de comisiones", stats));
   },
 );
+
+export const getByProduct: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const data = await CommissionService.aggregateByProduct(req.profile!.id);
+    res.json(ok("Comisiones por producto", data));
+  },
+);
+
+export const getHistory: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const months = Math.min(24, Math.max(1, parseInt(req.query.months as string) || 6));
+    const data = await CommissionService.getMonthlyHistory(req.profile!.id, months);
+    res.json(ok("Historial mensual de comisiones", data));
+  },
+);

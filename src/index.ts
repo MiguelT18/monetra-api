@@ -10,6 +10,9 @@ import AffiliationRoutes from "./routes/affiliation.routes.ts";
 import EnrollmentRoutes from "./routes/enrollment.routes.ts";
 import CommissionRoutes from "./routes/commission.routes.ts";
 import ReviewRoutes from "./routes/review.routes.ts";
+import UploadRoutes from "./routes/upload.routes.ts";
+import ProfileRoutes from "./routes/profiles.routes.ts";
+import ProfileCommentRoutes from "./routes/profile-comment.routes.ts";
 import express from "express";
 import { env } from "./config/env.ts";
 import cookieParser from "cookie-parser";
@@ -40,6 +43,9 @@ app.use("/api/affiliations", AffiliationRoutes);
 app.use("/api/enrollments", EnrollmentRoutes);
 app.use("/api/commissions", CommissionRoutes);
 app.use("/api/products/:id/reviews", ReviewRoutes);
+app.use("/api/upload", UploadRoutes);
+app.use("/api/profiles", ProfileRoutes);
+app.use("/api/profiles", ProfileCommentRoutes);
 
 app.use(errorMiddleware);
 

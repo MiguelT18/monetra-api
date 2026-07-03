@@ -108,6 +108,53 @@ class ReviewService {
       data: { rating: avgRating ? Math.round(avgRating * 10) / 10 : null },
     });
   }
+
+  async getProducerStats(producerId: string) {
+    const [
+      positiveCount,
+      negativeCount,
+      neutralCount,
+      recentComments,
+      profileCommentCount,
+    ] = await Promise.all([
+      this.prisma.reviews.count({
+        where: { product: { producerId }, rating: { gte: 4 } },
+      }),
+      this.prisma.reviews.count({
+        where: { product: { producerId }, rating: { lte: 2 } },
+      }),
+      this.prisma.reviews.count({
+        where: { product: { producerId }, rating: 3 },
+      }),
+      this.prisma.reviews.findMany({
+        where: { product: { producerId }, comment: { not: null } },
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          product: { select: { title: true } },
+          user: {
+            select: { id: true, fullname: true, username: true, avatar: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      this.prisma.profileComments.count({
+        where: { profileId: producerId },
+      }),
+    ]);
+
+    return {
+      positiveCount,
+      negativeCount,
+      neutralCount,
+      totalCount: positiveCount + negativeCount + neutralCount,
+      recentComments: recentComments ?? [],
+      profileCommentCount,
+    };
+  }
 }
 
 export default new ReviewService();

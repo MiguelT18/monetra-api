@@ -7,8 +7,8 @@ class AchievementService {
 
   async getUserAchievements(userId: string, role: string) {
     const templates = await this.prisma.achievement.findMany({
-      where: { role: role as any },
-      orderBy: { createdAt: "asc" },
+      where: { role: { in: [role, "ALL"] } as any },
+      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
     });
 
     const existing = await this.prisma.userAchievement.findMany({

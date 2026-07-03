@@ -70,5 +70,10 @@ export async function authMiddleware(
     return;
   }
 
+  PrismaInstance.profiles.update({
+    where: { id: data.user.id },
+    data: { lastSeenAt: new Date() },
+  }).catch(() => {});
+
   next();
 }

@@ -21,12 +21,35 @@ const AFFILIATION_WITH_PRODUCT = {
   },
 } as const;
 
+const AFFILIATION_WITH_FULL_PRODUCT = {
+  id: true,
+  productId: true,
+  affiliateId: true,
+  code: true,
+  commissionId: true,
+  product: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      price: true,
+      thumbnail: true,
+      affiliateEnabled: true,
+      commissionRate: true,
+      affiliateCookieDays: true,
+      affiliateDescription: true,
+      affiliateVideoUrl: true,
+      producerId: true,
+    },
+  },
+} as const;
+
 class AffiliationService {
   private prisma = PrismaInstance;
 
   async checkEligibility(
     productId: string,
-    _affiliateId: string,
+    affiliateId: string,
   ): Promise<AffiliateEligibility> {
     const product = await ProductService.getById(productId);
 
@@ -40,6 +63,10 @@ class AffiliationService {
     });
 
     const reasons: string[] = [];
+
+    if (affiliateId === product.producerId) {
+      reasons.push("No puedes afiliarte a tu propio producto");
+    }
 
     if (producer?.banned) {
       reasons.push("El creador del producto está suspendido");
@@ -93,6 +120,19 @@ class AffiliationService {
       },
       select: AFFILIATION_WITH_PRODUCT,
     });
+  }
+
+  async getById(id: string, affiliateId: string) {
+    const affiliation = await this.prisma.affiliations.findFirst({
+      where: { id, affiliateId },
+      select: AFFILIATION_WITH_FULL_PRODUCT,
+    });
+
+    if (!affiliation) {
+      throw new HttpError(404, "Afiliación no encontrada");
+    }
+
+    return affiliation;
   }
 
   async listByAffiliate(affiliateId: string, page = 1, limit = 20) {

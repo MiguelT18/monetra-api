@@ -1,15 +1,19 @@
 import sharp from "sharp";
-import { supabaseAdmin } from "../lib/supabase.ts";
+import { uploadFile, getPublicUrl, hasR2Credentials } from "../lib/r2.ts";
+import { HttpError } from "../errors/http-error.ts";
 
 const THUMBNAIL_MAX_BYTES = 500_000;
 
 export async function uploadBase64Image(
   image: string,
-  bucket: string,
   maxDimension = 640,
 ): Promise<string> {
   if (!image.startsWith("data:")) {
     return image;
+  }
+
+  if (!hasR2Credentials) {
+    throw new HttpError(500, "R2 no está configurado");
   }
 
   const match = image.match(/^data:image\/(\w+);base64,(.+)$/);
@@ -31,22 +35,9 @@ export async function uploadBase64Image(
   const ts = Date.now();
   const rand = Math.random().toString(36).slice(2, 10);
   const fileName = `${ts}_${rand}.webp`;
+  const key = `products/${fileName}`;
 
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from(bucket)
-    .upload(fileName, webpBuffer, {
-      contentType: "image/webp",
-      upsert: true,
-    });
+  await uploadFile(key, webpBuffer, "image/webp");
 
-  if (uploadError) {
-    console.error(`[upload error ${bucket}]:`, uploadError);
-    throw new Error("Error al subir la imagen");
-  }
-
-  const { data: publicUrlData } = supabaseAdmin.storage
-    .from(bucket)
-    .getPublicUrl(fileName);
-
-  return publicUrlData.publicUrl;
+  return getPublicUrl(key);
 }

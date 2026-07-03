@@ -29,12 +29,14 @@ export const getAll: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const search = req.query.search as string | undefined;
     const role = req.query.role as string | undefined;
+    const banned = req.query.banned as string | undefined;
     const offset = req.query.offset ? Number(req.query.offset) : undefined;
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
 
     const result = await UserService.getAllUsers({
       ...(search !== undefined ? { search } : {}),
       ...(role !== undefined ? { role } : {}),
+      ...(banned !== undefined ? { banned } : {}),
       ...(offset !== undefined ? { offset } : {}),
       ...(limit !== undefined ? { limit } : {}),
     });
@@ -84,6 +86,24 @@ export const toggleBan: RequestHandler = asyncHandler(
     const user = await UserService.toggleBan(id, banned);
 
     res.json(ok(banned ? "Usuario suspendido" : "Usuario restaurado", { user }));
+  },
+);
+
+export const getPublicProfile: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const username = req.params.username as string;
+
+    if (!username) {
+      throw new HttpError(400, "Username es requerido");
+    }
+
+    const profile = await UserService.getPublicProfile(username);
+
+    if (!profile) {
+      throw new HttpError(404, "Usuario no encontrado");
+    }
+
+    res.json(ok("Perfil público", { profile }));
   },
 );
 

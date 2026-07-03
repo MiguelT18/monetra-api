@@ -85,6 +85,92 @@ class CommissionService {
       },
     };
   }
+
+  async aggregateByProduct(affiliateId: string) {
+    const commissions = await this.prisma.commissions.findMany({
+      where: { profileId: affiliateId },
+      select: {
+        amount: true,
+        order: {
+          select: {
+            product: { select: { title: true } },
+          },
+        },
+      },
+    });
+
+    const map = new Map<string, { total: number; count: number }>();
+    for (const c of commissions) {
+      const title = c.order.product.title;
+      const entry = map.get(title) ?? { total: 0, count: 0 };
+      entry.total += c.amount;
+      entry.count += 1;
+      map.set(title, entry);
+    }
+
+    const result = Array.from(map.entries()).map(([product, data]) => ({
+      product,
+      total: data.total,
+      count: data.count,
+    }));
+
+    result.sort((a, b) => b.total - a.total);
+    return result;
+  }
+
+  async getMonthlyHistory(affiliateId: string, months = 6) {
+    const since = new Date();
+    since.setMonth(since.getMonth() - months + 1);
+    since.setDate(1);
+    since.setHours(0, 0, 0, 0);
+
+    const commissions = await this.prisma.commissions.findMany({
+      where: {
+        profileId: affiliateId,
+        order: { createdAt: { gte: since } },
+      },
+      select: {
+        amount: true,
+        status: true,
+        order: { select: { createdAt: true } },
+      },
+    });
+
+    const monthlyMap = new Map<string, { pending: number; paid: number }>();
+
+    for (let i = 0; i < months; i++) {
+      const d = new Date(since.getFullYear(), since.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthlyMap.set(key, { pending: 0, paid: 0 });
+    }
+
+    const monthNames = [
+      "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+      "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+    ];
+
+    for (const c of commissions) {
+      const d = new Date(c.order.createdAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const entry = monthlyMap.get(key);
+      if (entry) {
+        if (c.status === "PENDING") entry.pending += c.amount;
+        else if (c.status === "PAID") entry.paid += c.amount;
+      }
+    }
+
+    const result = Array.from(monthlyMap.entries()).map(([key, data]) => {
+      const parts = key.split("-");
+      const m = parts[1] ?? "01";
+      return {
+        month: monthNames[parseInt(m, 10) - 1] ?? m,
+        pending: data.pending,
+        paid: data.paid,
+      };
+    });
+
+    return result;
+  }
 }
 
 export default new CommissionService();

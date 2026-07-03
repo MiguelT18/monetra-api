@@ -10,5 +10,7 @@ router.use(requireRole("AFFILIATE"));
 
 router.get("/", CommissionController.listMyCommissions);
 router.get("/stats", CommissionController.getStats);
+router.get("/by-product", CommissionController.getByProduct);
+router.get("/history", CommissionController.getHistory);
 
 export default router;

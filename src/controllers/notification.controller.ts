@@ -2,22 +2,8 @@ import type { Request, Response, RequestHandler } from "express";
 import { asyncHandler } from "../utils/asyncHandler.ts";
 import { ok } from "../utils/helpers.ts";
 import NotificationService from "../services/notification.service.ts";
-import { createNotificationSchema } from "../schemas/notification.schema.ts";
+import ProductService from "../services/product.service.ts";
 
-export const send: RequestHandler = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { userId, title, message } = createNotificationSchema.parse(req.body);
-
-    const notification = await NotificationService.create({
-      userId,
-      senderId: req.user!.id,
-      title,
-      message,
-    });
-
-    res.status(201).json(ok("Notificación enviada", { notification }));
-  },
-);
 
 export const getUserNotifications: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
@@ -51,9 +37,12 @@ export const getUnreadCount: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user!.id;
 
-    const count = await NotificationService.getUnreadCount(userId);
+    const [count, pendingReviewCount] = await Promise.all([
+      NotificationService.getUnreadCount(userId),
+      req.profile?.role === "ADMIN" ? ProductService.countPendingReview() : Promise.resolve(0),
+    ]);
 
-    res.json(ok("Notificaciones no leídas", { count }));
+    res.json(ok("Notificaciones no leídas", { count, pendingReviewCount }));
   },
 );
 

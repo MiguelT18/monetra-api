@@ -1,7 +1,9 @@
 import { prisma as PrismaInstance } from "../lib/prisma.ts";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import { HttpError } from "../errors/http-error.ts";
 import NotificationService from "./notification.service.ts";
+
 import {
   PRODUCT_SELECT,
   PRODUCT_WITH_PRODUCER_SELECT,
@@ -25,11 +27,20 @@ class ProductService {
       status: "DRAFT",
       affiliateEnabled: input.affiliateEnabled ?? false,
       affiliateCookieDays: input.affiliateCookieDays ?? 30,
+      ...(input.affiliateDescription !== undefined
+        ? { affiliateDescription: input.affiliateDescription }
+        : {}),
+      ...(input.affiliateVideoUrl != null
+        ? { affiliateVideoUrl: input.affiliateVideoUrl }
+        : {}),
       ...(input.commissionRate != null
         ? { commissionRate: input.commissionRate }
         : {}),
       ...(input.introVideoUrl != null
         ? { introVideoUrl: input.introVideoUrl }
+        : {}),
+      ...(input.category != null
+        ? { category: input.category }
         : {}),
       ...(input.duration != null ? { duration: input.duration } : {}),
       ...(input.rating != null ? { rating: input.rating } : {}),
@@ -56,6 +67,28 @@ class ProductService {
         where: { producerId },
       }),
     ]);
+
+    const uncategorized = products.filter((p) => !p.category);
+    if (uncategorized.length > 0 && page === 1) {
+      for (const product of uncategorized) {
+        const existingNotification = await this.prisma.notifications.findFirst({
+          where: {
+            userId: producerId,
+            title: `"${product.title}" sin categoría`,
+            read: false,
+          },
+        });
+        if (!existingNotification) {
+          await NotificationService.create({
+            userId: producerId,
+            title: `"${product.title}" sin categoría`,
+            message: `El producto "${product.title}" no tiene una categoría asignada. Edítalo para añadir una y que pueda aparecer en el mercado.`,
+            link: `/user/products/${product.id}/edit?highlight=category`,
+          });
+        }
+      }
+    }
+
     return {
       products,
       total,
@@ -69,6 +102,7 @@ class ProductService {
     const skip = (page - 1) * limit;
     const where = {
       status: "PUBLISHED" as const,
+      category: { not: null },
       producer: { banned: false },
     };
     const [products, total] = await Promise.all([
@@ -145,14 +179,43 @@ class ProductService {
     producerId: string,
     input: UpdateProductInput,
   ) {
-    await this.getByIdForProducer(productId, producerId);
+    const product = await this.getByIdForProducer(productId, producerId);
     this.validateAffiliateConfig(input);
 
     if (input.status !== undefined && input.status !== "DRAFT") {
       throw new HttpError(403, "Solo puedes guardar como borrador. Usa 'Enviar a revisión' para solicitar publicación.");
     }
 
-    const updateData = {
+    // If product is PUBLISHED, store changes as draft without affecting live version
+    if (product.status === "PUBLISHED") {
+      const draftData: Record<string, unknown> = {};
+      if (input.title !== undefined) draftData.title = input.title;
+      if (input.description !== undefined) draftData.description = input.description;
+      if (input.price !== undefined) draftData.price = input.price;
+      if (input.thumbnail !== undefined) draftData.thumbnail = input.thumbnail;
+      if (input.affiliateEnabled !== undefined) draftData.affiliateEnabled = input.affiliateEnabled;
+      if (input.commissionRate !== undefined) draftData.commissionRate = input.commissionRate;
+      if (input.affiliateCookieDays !== undefined) draftData.affiliateCookieDays = input.affiliateCookieDays;
+      if (input.affiliateDescription !== undefined) draftData.affiliateDescription = input.affiliateDescription;
+      if (input.affiliateVideoUrl !== undefined) draftData.affiliateVideoUrl = input.affiliateVideoUrl;
+      if (input.introVideoUrl !== undefined) draftData.introVideoUrl = input.introVideoUrl;
+      if (input.category !== undefined) draftData.category = input.category;
+      if (input.duration !== undefined) draftData.duration = input.duration;
+      if (input.rating !== undefined) draftData.rating = input.rating;
+      if (input.modules !== undefined) draftData.modules = input.modules;
+
+      if (Object.keys(draftData).length === 0) {
+        throw new HttpError(400, "No hay campos para actualizar");
+      }
+
+      return this.prisma.products.update({
+        where: { id: productId },
+        data: { draftChanges: draftData } as Prisma.ProductsUpdateInput,
+        select: PRODUCT_SELECT,
+      });
+    }
+
+    const updateData: Record<string, unknown> = {
       ...(input.title !== undefined && { title: input.title }),
       ...(input.description !== undefined && { description: input.description }),
       ...(input.price !== undefined && { price: input.price }),
@@ -166,13 +229,20 @@ class ProductService {
       ...(input.affiliateCookieDays !== undefined && {
         affiliateCookieDays: input.affiliateCookieDays,
       }),
+      ...(input.affiliateDescription !== undefined && {
+        affiliateDescription: input.affiliateDescription,
+      }),
+      ...(input.affiliateVideoUrl !== undefined && {
+        affiliateVideoUrl: input.affiliateVideoUrl,
+      }),
       ...(input.introVideoUrl !== undefined && {
         introVideoUrl: input.introVideoUrl,
       }),
+      ...(input.category !== undefined && { category: input.category }),
       ...(input.duration !== undefined && { duration: input.duration }),
       ...(input.rating !== undefined && { rating: input.rating }),
       ...(input.modules !== undefined && { modules: input.modules }),
-    } as unknown as Prisma.ProductsUpdateInput;
+    };
 
     if (Object.keys(updateData).length === 0) {
       throw new HttpError(400, "No hay campos para actualizar");
@@ -180,7 +250,7 @@ class ProductService {
 
     return this.prisma.products.update({
       where: { id: productId },
-      data: updateData,
+      data: updateData as Prisma.ProductsUpdateInput,
       select: PRODUCT_SELECT,
     });
   }
@@ -188,15 +258,71 @@ class ProductService {
   async submitForReview(productId: string, producerId: string) {
     const product = await this.getByIdForProducer(productId, producerId);
 
+    const draftCat =
+      product.status === "PUBLISHED" && product.draftChanges
+        ? (product.draftChanges as Record<string, unknown>).category
+        : undefined;
+
+    if (!product.category && !draftCat) {
+      throw new HttpError(400, "Debes asignar una categoría al producto antes de enviarlo a revisión.");
+    }
+
+    // If product is PUBLISHED with pending draft changes, apply them
+    if (product.status === "PUBLISHED" && product.draftChanges) {
+      const draft = product.draftChanges as Record<string, unknown>;
+      const prev: Record<string, unknown> = {};
+      if (draft.title !== undefined) prev.title = product.title;
+      if (draft.description !== undefined) prev.description = product.description;
+      if (draft.price !== undefined) prev.price = product.price;
+      if (draft.thumbnail !== undefined) prev.thumbnail = product.thumbnail;
+      if (draft.affiliateEnabled !== undefined) prev.affiliateEnabled = product.affiliateEnabled;
+      if (draft.commissionRate !== undefined) prev.commissionRate = product.commissionRate;
+      if (draft.affiliateCookieDays !== undefined) prev.affiliateCookieDays = product.affiliateCookieDays;
+      if (draft.affiliateDescription !== undefined) prev.affiliateDescription = product.affiliateDescription;
+      if (draft.affiliateVideoUrl !== undefined) prev.affiliateVideoUrl = product.affiliateVideoUrl;
+      if (draft.introVideoUrl !== undefined) prev.introVideoUrl = product.introVideoUrl;
+      if (draft.duration !== undefined) prev.duration = product.duration;
+      if (draft.modules !== undefined) prev.modules = product.modules;
+
+      const updatedPub = await this.prisma.products.update({
+        where: { id: productId },
+        data: {
+          ...draft,
+          previousValues: Object.keys(prev).length > 0 ? prev : Prisma.JsonNull,
+          draftChanges: Prisma.JsonNull,
+          status: "UNDER_REVIEW",
+        } as Prisma.ProductsUpdateInput,
+        select: PRODUCT_SELECT,
+      });
+
+      await NotificationService.create({
+        userId: producerId,
+        title: "Actualización enviada a revisión",
+        message: `Los cambios de tu producto "${product.title}" han sido enviados a revisión.`,
+        link: "/user/products",
+      });
+
+      return updatedPub;
+    }
+
     if (product.status !== "DRAFT" && product.status !== "REJECTED") {
       throw new HttpError(400, "Solo puedes enviar a revisión productos en borrador o rechazados");
     }
 
-    return this.prisma.products.update({
+    const updated = await this.prisma.products.update({
       where: { id: productId },
       data: { status: "UNDER_REVIEW" },
       select: PRODUCT_SELECT,
     });
+
+    await NotificationService.create({
+      userId: producerId,
+      title: "Producto enviado a revisión",
+      message: `Tu producto "${product.title}" ha sido enviado a revisión correctamente. Recibirás una notificación cuando sea revisado.`,
+      link: "/user/products",
+    });
+
+    return updated;
   }
 
   async review(productId: string, adminId: string, action: "PUBLISHED" | "REJECTED") {
@@ -210,9 +336,14 @@ class ProductService {
       throw new HttpError(400, "El producto no está pendiente de revisión");
     }
 
+    const updateData: Record<string, unknown> = { status: action };
+    if (action === "PUBLISHED") {
+      updateData.previousValues = Prisma.JsonNull;
+    }
+
     const updated = await this.prisma.products.update({
       where: { id: productId },
-      data: { status: action },
+      data: updateData as Prisma.ProductsUpdateInput,
       select: PRODUCT_SELECT,
     });
 
@@ -224,6 +355,7 @@ class ProductService {
       message: isApproved
         ? `Tu producto "${product.title}" ha sido aprobado y publicado.`
         : `Tu producto "${product.title}" ha sido rechazado.`,
+      link: isApproved ? `/user/explore/${productId}` : "/user/products",
     });
 
     return updated;
@@ -235,6 +367,30 @@ class ProductService {
       select: PRODUCT_WITH_PRODUCER_AND_COUNT,
       orderBy: { updatedAt: "desc" },
     });
+  }
+
+  async countPendingReview() {
+    return this.prisma.products.count({
+      where: { status: "UNDER_REVIEW" },
+    });
+  }
+
+  async getLessonHlsUrl(productId: string, moduleIndex: number, lessonIndex: number) {
+    const product = await this.prisma.products.findUnique({
+      where: { id: productId },
+      select: { modules: true },
+    });
+
+    if (!product) throw new HttpError(404, "Producto no encontrado");
+
+    const modules: any[] = (product.modules as any[]) || [];
+    const lesson = modules[moduleIndex]?.lessons[lessonIndex];
+
+    if (!lesson?.hlsUrl) {
+      throw new HttpError(404, "Video no encontrado en esta lección");
+    }
+
+    return { hlsUrl: lesson.hlsUrl };
   }
 
   async getPreview(productId: string) {
@@ -321,6 +477,53 @@ class ProductService {
       temperatureLabel,
       recentSales: recentOrders,
       recentEnrollments,
+    };
+  }
+
+  async getAnalytics(productId: string) {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const [dailyOrders, dailyEnrollments, product, totalAffiliates] = await Promise.all([
+      this.prisma.$queryRawUnsafe<{ date: string; count: bigint }[]>(
+        `SELECT DATE(o."createdAt")::text AS date, COUNT(*)::bigint AS count
+         FROM "Orders" o WHERE o."productId" = $1 AND o."createdAt" >= $2
+         GROUP BY DATE(o."createdAt") ORDER BY date`,
+        productId, thirtyDaysAgo,
+      ),
+      this.prisma.$queryRawUnsafe<{ date: string; count: bigint }[]>(
+        `SELECT DATE(e."createdAt")::text AS date, COUNT(*)::bigint AS count
+         FROM "Enrollments" e WHERE e."productId" = $1 AND e."createdAt" >= $2
+         GROUP BY DATE(e."createdAt") ORDER BY date`,
+        productId, thirtyDaysAgo,
+      ),
+      this.prisma.products.findUnique({
+        where: { id: productId },
+        select: { _count: { select: { orders: true, enrollments: true, affiliations: true } } },
+      }),
+      this.prisma.affiliations.count({ where: { productId } }),
+    ]);
+
+    const ordersMap = new Map(dailyOrders.map((r) => [r.date, Number(r.count)]));
+    const enrollmentsMap = new Map(dailyEnrollments.map((r) => [r.date, Number(r.count)]));
+
+    const dailyActivity: { date: string; orders: number; enrollments: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const key = d.toISOString().slice(0, 10);
+      const display = d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+      dailyActivity.push({
+        date: display,
+        orders: ordersMap.get(key) ?? 0,
+        enrollments: enrollmentsMap.get(key) ?? 0,
+      });
+    }
+
+    return {
+      dailyActivity,
+      totalAffiliates,
+      totalOrders: product?._count?.orders ?? 0,
+      totalEnrollments: product?._count?.enrollments ?? 0,
     };
   }
 

@@ -37,3 +37,13 @@ export const listMyAffiliations: RequestHandler = asyncHandler(
     res.json(ok("Tus afiliaciones", result));
   },
 );
+
+export const getAffiliation: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+
+    const affiliation = await AffiliationService.getById(id, req.profile!.id);
+
+    res.json(ok("Detalle de afiliación", affiliation));
+  },
+);
