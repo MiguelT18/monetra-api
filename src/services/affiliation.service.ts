@@ -1,6 +1,7 @@
 import { HttpError } from "../errors/http-error.ts";
 import type { AffiliateEligibility } from "../types/affiliation.types.ts";
 import ProductService from "./product.service.ts";
+import CommissionService from "./commission.service.ts";
 import { prisma as PrismaInstance } from "../lib/prisma.ts";
 import { randomUUID } from "node:crypto";
 
@@ -10,10 +11,12 @@ const AFFILIATION_WITH_PRODUCT = {
   affiliateId: true,
   code: true,
   commissionId: true,
+  createdAt: true,
   product: {
     select: {
       id: true,
       title: true,
+      description: true,
       thumbnail: true,
       commissionRate: true,
       affiliateCookieDays: true,
@@ -149,6 +152,42 @@ class AffiliationService {
     ]);
     return {
       affiliations,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async listProductsWithStats(affiliateId: string, page = 1, limit = 50) {
+    const skip = (page - 1) * limit;
+    const [affiliations, total, stats] = await Promise.all([
+      this.prisma.affiliations.findMany({
+        where: { affiliateId },
+        select: AFFILIATION_WITH_PRODUCT,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      this.prisma.affiliations.count({ where: { affiliateId } }),
+      CommissionService.aggregateByAffiliation(affiliateId),
+    ]);
+
+    const products = affiliations.map((a) => ({
+      id: a.id,
+      code: a.code,
+      createdAt: a.createdAt,
+      product: a.product,
+      stats: stats.get(a.id) ?? {
+        sales: 0,
+        paid: 0,
+        pending: 0,
+        returns: 0,
+      },
+    }));
+
+    return {
+      products,
       total,
       page,
       limit,

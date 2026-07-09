@@ -9,6 +9,7 @@ router.use(authMiddleware, loadProfile);
 router.use(requireRole("AFFILIATE"));
 
 router.get("/", AffiliationController.listMyAffiliations);
+router.get("/products", AffiliationController.listProducts);
 router.get("/:id", AffiliationController.getAffiliation);
 
 export default router;

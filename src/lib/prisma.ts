@@ -7,6 +7,15 @@ const { Pool } = pg;
 
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 10,
+  allowExitOnIdle: true,
+});
+
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
 });
 
 const adapter = new PrismaPg(pool);

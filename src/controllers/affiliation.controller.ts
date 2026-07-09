@@ -38,6 +38,17 @@ export const listMyAffiliations: RequestHandler = asyncHandler(
   },
 );
 
+export const listProducts: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+
+    const result = await AffiliationService.listProductsWithStats(req.profile!.id, page, limit);
+
+    res.json(ok("Productos afiliados", result));
+  },
+);
+
 export const getAffiliation: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const id = req.params.id as string;

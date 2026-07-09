@@ -52,7 +52,7 @@ class CommissionService {
   }
 
   async getStats(affiliateId: string) {
-    const [pending, paid, rejected] = await Promise.all([
+    const [pending, paid, rejected, canceled] = await Promise.all([
       this.prisma.commissions.aggregate({
         where: { profileId: affiliateId, status: "PENDING" },
         _sum: { amount: true },
@@ -65,6 +65,11 @@ class CommissionService {
       }),
       this.prisma.commissions.aggregate({
         where: { profileId: affiliateId, status: "REJECTED" },
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
+      this.prisma.commissions.aggregate({
+        where: { profileId: affiliateId, status: "CANCELED" },
         _sum: { amount: true },
         _count: { id: true },
       }),
@@ -83,7 +88,42 @@ class CommissionService {
         total: rejected._sum.amount ?? 0,
         count: rejected._count.id,
       },
+      canceled: {
+        total: canceled._sum.amount ?? 0,
+        count: canceled._count.id,
+      },
     };
+  }
+
+  async aggregateByAffiliation(affiliateId: string) {
+    const rows = await this.prisma.commissions.groupBy({
+      by: ["affiliationId", "status"],
+      where: { profileId: affiliateId },
+      _sum: { amount: true },
+      _count: { id: true },
+    });
+
+    const map = new Map<
+      string,
+      { sales: number; paid: number; pending: number; returns: number }
+    >();
+
+    for (const row of rows) {
+      const entry =
+        map.get(row.affiliationId) ??
+        { sales: 0, paid: 0, pending: 0, returns: 0 };
+      const amount = row._sum.amount ?? 0;
+      const count = row._count.id;
+
+      entry.sales += count;
+      if (row.status === "PAID") entry.paid += amount;
+      else if (row.status === "PENDING") entry.pending += amount;
+      else if (row.status === "CANCELED") entry.returns += amount;
+
+      map.set(row.affiliationId, entry);
+    }
+
+    return map;
   }
 
   async aggregateByProduct(affiliateId: string) {

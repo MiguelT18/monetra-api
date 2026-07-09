@@ -136,6 +136,7 @@ model Affiliations {
   affiliateId  String
   commissionId String
   code         String        @unique
+  createdAt    DateTime      @default(now())
   affiliate    Profiles      @relation(fields: [affiliateId], references: [id])
   product      Products      @relation(fields: [productId], references: [id])
   commissions  Commissions[]
