@@ -124,6 +124,87 @@ class ProductService {
     };
   }
 
+  async getRecommendations(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const baseWhere: Prisma.ProductsWhereInput = {
+      status: "PUBLISHED",
+      category: { not: null },
+      producer: { banned: false },
+    };
+
+    // 1. Derive the recommendation profile from the user's enrollments
+    const enrolled = await this.prisma.enrollments.findMany({
+      where: { userId },
+      select: { productId: true, product: { select: { category: true } } },
+    });
+    const interestCategories = Array.from(
+      new Set(
+        enrolled
+          .map((e) => e.product.category)
+          .filter((c): c is string => Boolean(c)),
+      ),
+    );
+    const enrolledProductIds = enrolled.map((e) => e.productId);
+
+    let mode: "interests" | "best_sellers" | "recent" = "recent";
+    let where = baseWhere;
+    let orderBy:
+      | Record<string, unknown>
+      | Record<string, unknown>[] = { createdAt: "desc" };
+
+    if (interestCategories.length > 0) {
+      mode = "interests";
+      where = {
+        ...baseWhere,
+        category: { in: interestCategories },
+        id: { notIn: enrolledProductIds },
+      };
+      orderBy = [
+        { rating: { sort: "desc", nulls: "last" } },
+        { createdAt: "desc" },
+      ];
+    } else {
+      // 2. Fallback to best sellers if there are any sales in the app
+      const topSeller = await this.prisma.products.findFirst({
+        where: baseWhere,
+        select: { _count: { select: { orders: true } } },
+        orderBy: { orders: { _count: "desc" } },
+      });
+      const hasSales = (topSeller?._count.orders ?? 0) > 0;
+
+      if (hasSales) {
+        mode = "best_sellers";
+        where = baseWhere;
+        orderBy = [{ orders: { _count: "desc" } }, { createdAt: "desc" }];
+      } else {
+        // 3. No sales yet → most recent published products
+        mode = "recent";
+        where = baseWhere;
+        orderBy = { createdAt: "desc" };
+      }
+    }
+
+    const [products, total] = await Promise.all([
+      this.prisma.products.findMany({
+        where,
+        select: PRODUCT_WITH_PRODUCER_AND_COUNT,
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      this.prisma.products.count({ where }),
+    ]);
+
+    return {
+      mode,
+      products,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    };
+  }
+
   async getById(productId: string) {
     return this.prisma.products.findUnique({
       where: { id: productId },

@@ -45,6 +45,17 @@ export const listCatalog: RequestHandler = asyncHandler(
   },
 );
 
+export const getRecommendations: RequestHandler = asyncHandler(
+  async (req: Request, res: Response) => {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+
+    const result = await ProductService.getRecommendations(req.profile!.id, page, limit);
+
+    res.json(ok("Recomendaciones para ti", result));
+  },
+);
+
 export const getProduct: RequestHandler = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = productIdParamSchema.parse(req.params);

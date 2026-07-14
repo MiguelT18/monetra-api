@@ -13,6 +13,13 @@ router.use(authMiddleware, loadProfile);
 // Catálogo público (autenticado): estudiantes y afiliados exploran productos publicados
 router.get("/catalog", ProductController.listCatalog);
 
+// Recomendaciones personalizadas (estudiante/afiliado): intereses → más vendidos → recientes
+router.get(
+  "/recommendations",
+  requireRole("STUDENT", "AFFILIATE"),
+  ProductController.getRecommendations,
+);
+
 // Creador: CRUD de sus productos
 router.get("/mine", requireRole("CREATOR"), ProductController.listMyProducts);
 router.post("/", requireRole("CREATOR"), productWriteLimiter, ProductController.createProduct);
